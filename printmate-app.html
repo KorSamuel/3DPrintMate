@@ -1,0 +1,1132 @@
+<title>PrintMate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@700;800;900&display=swap">
+<style>
+/* Layout: responsive web app. Wide screens: left sidebar + centered content up to 1180px with two-column pages. Phones: bottom tab bar, single column. */
+/* Theme: Discord DESIGN.md (DESIGN-discord.md) — deep-indigo canvas, Blurple actions, green for the one high-intent CTA, magenta accents. Dark only. */
+:root{
+  --desk:#05072A; --bg:#0A0D3A; --surface:#1E2353; --sunk:#2A3068; --ink:#FFFFFF; --muted:#B5B9DA; --faint:#7C82B3;
+  --line:#2E3470; --accent:#5865F2; --accent-ink:#FFFFFF; --accent-soft:#272E7A; --accent-text:#9AA2FF;
+  --green:#35ED7E; --green-ink:#000000; --magenta:#EC48BD; --link:#00B0F4;
+  --warn:#FFB547; --warn-soft:#3D3020; --bad:#FF6B7A; --bad-soft:#47203A; --info:#00B0F4; --info-soft:#13305A;
+  --plate:#23272A; --shadow:0 3px 68px rgba(69,42,124,.35);
+  --grad:linear-gradient(135deg,#5865F2 0%,#8B4FE0 55%,#EC48BD 100%);
+  --sans:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --display:"Hanken Grotesk","Noto Sans KR","Apple SD Gothic Neo",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r-xl:40px; --r-lg:16px; --r-md:14px; --r-sm:12px;
+  color-scheme:dark;
+}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--link)}
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.i.sm{width:16px;height:16px}
+
+/* ---------- shell ---------- */
+.frame{position:relative;width:100%;height:100%;background:var(--bg);display:flex;flex-direction:column;overflow:hidden}
+.scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;padding-bottom:96px;min-width:0}
+.view{display:flex;flex-direction:column;gap:16px;width:100%;max-width:1180px;margin:0 auto}
+.pad{padding-inline:16px}
+.split{display:flex;flex-direction:column;gap:14px}
+.split > div{display:flex;flex-direction:column;gap:14px;min-width:0}
+.desk-only{display:none!important}
+
+/* ---------- nav ---------- */
+.nav{display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border-top:1px solid var(--line);padding:6px 4px 8px}
+.nav button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;font-size:11.5px;color:var(--muted);font-weight:500}
+.nav button[aria-current="page"]{color:var(--accent-text)}
+.nav button[aria-current="page"] svg{stroke:var(--accent)}
+.nav .navbrand,.nav .navme,.nav .navfoot{display:none}
+#qSave{white-space:nowrap;flex:none}
+
+@media (min-width:900px){
+  .frame{flex-direction:row}
+  .nav{order:-1;width:244px;flex:none;display:flex;flex-direction:column;gap:2px;border-top:0;border-right:1px solid var(--line);padding:22px 14px 18px}
+  .nav button{flex-direction:row;justify-content:flex-start;gap:12px;padding:11px 12px;border-radius:12px;font-size:15px;color:var(--ink)}
+  .nav button:hover{background:var(--sunk)}
+  .nav button[aria-current="page"]{background:var(--accent-soft);color:var(--accent-text);font-weight:700}
+  .nav .navbrand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px;padding:0 8px 20px;letter-spacing:-.01em}
+  .navme{display:flex!important;margin-top:auto;border-top:1px solid var(--line);border-radius:0 0 12px 12px!important;padding-top:14px!important}
+  .navme .meav{width:32px;height:32px;font-size:14px;display:grid;place-items:center}
+  .navme span:last-child{display:flex;flex-direction:column;line-height:1.3;text-align:left}
+  .navme small{font-size:12px;color:var(--muted);font-weight:500}
+  .nav .navfoot{display:block;font-size:11.5px;color:var(--faint);padding:10px 8px 0;line-height:1.5}
+  .scroll{padding-bottom:56px}
+  .pad{padding-inline:32px}
+  .desk-only{display:flex!important}
+  .mob-only{display:none!important}
+  .split{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;align-items:start}
+  .split > .main{grid-column:1;grid-row:1 / span 2}
+  .split > .a1{grid-column:2;grid-row:1}
+  .split > .a2{grid-column:2;grid-row:2}
+}
+
+/* ---------- headers ---------- */
+.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:14px 16px 0}
+@media (min-width:900px){.top{padding:24px 32px 0}.top .logo{display:none}.titlebar{padding:36px 32px 6px!important}.titlebar h1{font-size:30px!important}.titlebar p{font-size:15px!important}}
+.titlebar{padding:20px 16px 4px}
+.titlebar h1{font-size:24px;line-height:1.25;margin:0;font-weight:700;letter-spacing:-.02em;text-wrap:balance}
+.titlebar p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.searchrow{display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:10px;background:var(--accent);display:grid;place-items:center;flex:none}
+.logo svg{width:20px;height:20px}
+.search{flex:1;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:0 14px;height:42px;color:var(--faint);min-width:0}
+.search input{border:0;outline:0;background:none;flex:1;min-width:0;color:var(--ink)}
+.bell{position:relative;width:40px;height:40px;display:grid;place-items:center;color:var(--ink)}
+.bell b{position:absolute;top:2px;right:-2px;background:var(--bad);color:#fff;font-size:10px;line-height:1;padding:3px 5px;border-radius:999px;font-family:var(--mono)}
+.tabs{display:flex;gap:22px;overflow-x:auto;scrollbar-width:none;margin-top:12px;border-bottom:1px solid var(--line)}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{position:relative;padding:8px 0 12px;font-size:16px;font-weight:500;color:var(--muted);white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--accent-text);font-weight:700}
+.tabs button[aria-selected="true"]::after{content:"";position:absolute;left:50%;bottom:-1px;width:22px;height:4px;border-radius:4px;background:var(--accent);transform:translateX(-50%)}
+
+/* ---------- cards & common ---------- */
+.card{background:var(--surface);border-radius:var(--r-lg);padding:16px}
+.card h2,.sec h2{font-size:17px;margin:0;font-weight:700;letter-spacing:-.01em}
+.sec{display:flex;flex-direction:column;gap:10px}
+.sechead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sechead .more{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;font-size:14px;font-weight:500;color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--sunk);color:var(--muted)}
+.tag.ok{background:var(--accent-soft);color:var(--accent-text)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.info{background:var(--info-soft);color:var(--info)}
+.tag.bad{background:var(--bad-soft);color:var(--bad)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:48px;padding:0 18px;border-radius:14px;font-weight:600;font-size:15px}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.primary:disabled{background:var(--sunk);color:var(--faint);cursor:not-allowed}
+.btn.ghost{background:var(--sunk);color:var(--ink)}
+.btn.block{width:100%}
+.btnrow{display:flex;gap:8px}
+.btnrow .btn{flex:1}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.note{font-size:12.5px;color:var(--muted);line-height:1.5}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:500}
+.inp{height:44px;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:0 12px;color:var(--ink);width:100%;min-width:0}
+textarea.inp{height:auto;min-height:76px;padding:10px 12px;resize:vertical}
+.unit{position:relative}
+.unit .inp{padding-right:52px;font-family:var(--mono)}
+.unit span{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--faint);pointer-events:none}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.divider{height:1px;background:var(--line)}
+
+/* ---------- feed ---------- */
+.banner{display:flex;align-items:center;gap:10px;background:var(--accent-soft);color:var(--accent-text);border-radius:var(--r-md);padding:10px 14px;font-size:13.5px;font-weight:500}
+.masonry{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.post{background:var(--surface);border-radius:var(--r-md);overflow:hidden;text-align:left;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.post .th{position:relative;display:block}
+.post .th > svg{display:block;width:100%;height:auto}
+img.tph{display:block;width:100%;max-width:100%;height:auto;object-fit:cover;background:var(--sunk)}
+.mini img.tph{height:96px}
+.hero img.tph{max-height:240px}
+.thumbs img.tph{height:100%}
+.post .kind{position:absolute;top:8px;left:8px;font-size:11px;font-weight:700;padding:3px 7px;border-radius:7px;background:rgba(20,26,22,.82);color:#fff;display:flex;align-items:center;gap:3px}
+.post .kind.case{background:var(--accent);color:var(--accent-ink)}
+.post .kind.q{background:var(--info);color:#fff}
+.post .body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px}
+.post h3{font-size:14.5px;line-height:1.4;margin:0;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.post .spec{font-size:12px;color:var(--muted)}
+.post .foot{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12.5px;color:var(--muted)}
+.who{display:flex;align-items:center;gap:6px;min-width:0}
+.who span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff;flex:none}
+.like{display:flex;align-items:center;gap:3px;color:var(--muted)}
+.like[aria-pressed="true"]{color:var(--accent-text)}
+.like[aria-pressed="true"] svg{fill:var(--accent-soft)}
+.empty{padding:40px 16px;text-align:center;color:var(--muted);font-size:14px}
+.fab{position:absolute;right:16px;bottom:88px;z-index:6;display:flex;align-items:center;gap:6px;height:48px;padding:0 18px 0 14px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:700;box-shadow:0 8px 20px rgba(0,120,45,.35)}
+
+/* ---------- sheet & toast ---------- */
+.sheetwrap{position:absolute;inset:0;z-index:20;background:rgba(8,14,10,.45);display:flex;align-items:flex-end;animation:fade .18s ease}
+.sheet{background:var(--surface);width:100%;max-height:90%;overflow-y:auto;border-radius:24px 24px 0 0;padding:10px 16px 24px;display:flex;flex-direction:column;gap:14px;animation:up .22s ease}
+.grab{width:40px;height:5px;border-radius:5px;background:var(--line);margin:0 auto 4px}
+.sheethead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.sheethead h2{font-size:19px;line-height:1.35;margin:0;text-wrap:balance}
+.x{width:36px;height:36px;border-radius:50%;background:var(--sunk);display:grid;place-items:center;flex:none}
+.hero{border-radius:var(--r-md);overflow:hidden}
+.hero svg{display:block;width:100%;height:auto;max-height:240px}
+.block h4{margin:0 0 4px;font-size:13px;color:var(--muted);font-weight:600}
+.block p{margin:0}
+.kv{display:grid;grid-template-columns:auto 1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:14px}
+.kv div{padding:9px 12px;border-top:1px solid var(--line)}
+.kv div:nth-child(-n+2){border-top:0}
+.kv div:nth-child(odd){color:var(--muted);background:var(--bg)}
+.kv div:nth-child(even){font-family:var(--mono);font-weight:500}
+.verify{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--accent-soft);border-radius:var(--r-md);padding:12px 14px}
+.verify strong{color:var(--accent-text)}
+.toast{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:500;white-space:nowrap;animation:up .2s ease}
+@keyframes up{from{transform:translateY(16px);opacity:.4}}
+.toast{animation-name:toastin}
+@media (min-width:900px){.sheetwrap{align-items:center;justify-content:center;padding:32px}.sheet{max-width:600px;max-height:88%;border-radius:24px;padding:20px 24px 28px}.grab{display:none}.fab{bottom:28px;right:32px}.toast{bottom:32px;left:calc(50% + 122px)}}
+@keyframes toastin{from{opacity:0;transform:translate(-50%,8px)}}
+@keyframes fade{from{opacity:0}}
+
+/* ---------- troubleshoot ---------- */
+.step{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted)}
+.step b{width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:12px;font-family:var(--mono)}
+.symgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sym{border:2px solid var(--line);border-radius:var(--r-md);overflow:hidden;text-align:left;display:flex;flex-direction:column;background:var(--surface)}
+.symimg{position:relative;display:block}
+.symimg > svg,.symimg > img{display:block;width:100%;aspect-ratio:4/3;height:auto;object-fit:cover}
+.phtag{position:absolute;left:6px;bottom:6px;font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:5px;background:rgba(20,26,22,.78);color:#fff}
+.symtx{display:flex;flex-direction:column;gap:2px;padding:9px 10px 11px}
+.sym strong{font-size:14px;line-height:1.35}
+.symtx > span{font-size:12px;color:var(--muted);line-height:1.4}
+.sym[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.upl{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:168px;border-radius:var(--r-lg);background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:center;padding:20px;box-shadow:0 10px 24px rgba(0,120,45,.25)}
+.upl:hover{filter:brightness(1.05)}
+.upl:focus-within{outline:2px solid var(--ink);outline-offset:2px}
+.uplic{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.2);display:grid;place-items:center}
+.uplic svg{width:28px;height:28px}
+.upl b{font-size:22px;letter-spacing:-.01em}
+.upl > span:last-child{font-size:13.5px;opacity:.9}
+.upl.has{padding:0;min-height:0;background:var(--surface);color:var(--ink);overflow:hidden;cursor:default;box-shadow:var(--shadow)}
+.upl.has img{display:block;width:100%;max-height:280px;object-fit:cover}
+.uplbar{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;padding:10px 12px;font-size:14px;font-weight:600}
+.uplbar > span:first-child{display:flex;align-items:center;gap:6px;color:var(--accent-text)}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.compare figure{margin:0;display:flex;flex-direction:column;gap:4px}
+.compare figure > img,.compare figure > svg,.nophoto{display:block;width:100%;aspect-ratio:1;height:auto;object-fit:cover;border-radius:12px;overflow:hidden}
+.nophoto{background:var(--sunk);display:grid;place-items:center;align-content:center;gap:4px;color:var(--muted);font-size:12px}
+.compare figcaption{font-size:12px;color:var(--muted);text-align:center}
+.photo{display:flex;align-items:center;gap:12px;border:1.5px dashed var(--line);border-radius:var(--r-md);padding:12px;cursor:pointer}
+.photo img{width:56px;height:56px;object-fit:cover;border-radius:10px}
+.photo .ph{width:56px;height:56px;border-radius:10px;background:var(--sunk);display:grid;place-items:center;color:var(--muted)}
+.cause{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.cause:first-of-type{border-top:0}
+.cbox{width:24px;height:24px;border-radius:7px;border:1.5px solid var(--faint);display:grid;place-items:center;margin-top:1px}
+.cbox[aria-checked="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.cbox svg{width:15px;height:15px;stroke-width:2.6;opacity:0}
+.cbox[aria-checked="true"] svg{opacity:1}
+.cause .t{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-weight:600;font-size:14.5px}
+.cause p{margin:3px 0 0;font-size:13.5px;color:var(--muted)}
+.cause.done .t span:first-child{text-decoration:line-through;color:var(--muted)}
+.prog{height:8px;border-radius:8px;background:var(--sunk);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent);border-radius:8px;transition:width .3s}
+.hscroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.hscroll::-webkit-scrollbar{display:none}
+.mini{flex:0 0 150px;background:var(--bg);border-radius:var(--r-md);overflow:hidden;text-align:left}
+.mini svg{display:block;width:100%;height:96px}
+.mini div{padding:8px 10px;font-size:12.5px;font-weight:600;line-height:1.35}
+.mini small{display:block;color:var(--muted);font-weight:500;margin-top:2px}
+
+/* ---------- cost ---------- */
+.quote{background:var(--ink);color:var(--bg);border-radius:var(--r-lg);padding:18px;display:flex;flex-direction:column;gap:12px}
+.quote .lbl{font-size:13px;opacity:.7}
+.quote .big{font-family:var(--mono);font-size:34px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
+.quote .row{display:flex;justify-content:space-between;font-size:13px;gap:8px}
+.quote .row span:last-child{font-family:var(--mono)}
+.stack{display:flex;height:10px;border-radius:10px;overflow:hidden;gap:2px}
+.stack i{display:block;height:100%}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:12px}
+.legend div{display:flex;align-items:center;gap:6px;justify-content:space-between}
+.legend div span:first-child{display:flex;align-items:center;gap:6px;opacity:.8}
+.legend em{width:8px;height:8px;border-radius:2px;display:inline-block}
+.legend .mono{opacity:.95}
+.saved{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.saved:first-child{border-top:0}
+.saved .mono{font-weight:600}
+
+/* ---------- prep ---------- */
+.device{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 16px 0}
+.device select{border:0;background:none;font-size:22px;font-weight:700;letter-spacing:-.01em;padding:0;appearance:none;-webkit-appearance:none;max-width:100%}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block}
+.job{display:grid;grid-template-columns:84px 1fr;gap:14px;align-items:center}
+.job .gc{width:84px;height:84px;border-radius:12px;background:var(--sunk);display:grid;place-items:center}
+.job .pct{font-family:var(--mono);font-size:24px;font-weight:600}
+.temps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.temp{background:var(--surface);border-radius:var(--r-md);padding:12px}
+.temp small{display:block;color:var(--muted);font-size:12px}
+.temp b{font-family:var(--mono);font-size:22px;font-weight:600}
+.temp b span{font-size:12px;color:var(--muted);font-weight:500}
+.matgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.matgrid div{background:var(--bg);border-radius:12px;padding:10px 12px}
+.matgrid small{display:block;font-size:12px;color:var(--muted)}
+.matgrid b{font-family:var(--mono);font-size:16px;font-weight:600}
+.check{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-top:1px solid var(--line);text-align:left;width:100%}
+.check:first-child{border-top:0}
+.check span{font-size:14.5px}
+.check small{display:block;color:var(--muted);font-size:12.5px}
+.check.done span{color:var(--muted)}
+
+/* ---------- AI coach ---------- */
+.srcs{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.srcs span{display:flex;align-items:center;gap:6px}
+.srcs i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.cstep{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:14px 0;border-top:1px solid var(--line)}
+.cstep:first-child{border-top:0;padding-top:4px}
+.cnum{width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:13px;font-weight:600}
+.cstep.done .cnum{background:var(--accent);color:var(--accent-ink)}
+.cbody{display:flex;flex-direction:column;gap:7px;min-width:0}
+.cbody .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:600;font-size:15px}
+.cbody p{margin:0;font-size:13.5px;color:var(--muted)}
+.score{font-size:13px;color:var(--accent-text);background:var(--accent-soft);padding:1px 7px;border-radius:6px;flex:none}
+.evid{display:flex;flex-wrap:wrap;gap:6px}
+.cref{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--info);text-align:left;background:var(--info-soft);border-radius:8px;padding:6px 8px;align-self:flex-start}
+.apply{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;align-self:flex-start;padding:2px 0}
+.apply .cbox{width:22px;height:22px}
+.apply[aria-checked="true"] .cbox{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.apply[aria-checked="true"] .cbox svg{opacity:1}
+.apply:disabled{cursor:default;opacity:.75}
+.rates{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rates .chip{border-radius:12px;padding:10px;text-align:center}
+.upg{border:1.5px solid var(--accent)}
+.chg{display:flex;flex-direction:column}
+.chg > div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.chg > div:first-child{border-top:0}
+.chg .note{grid-column:1 / -1}
+.chg b.up{color:var(--accent-text)}
+.chg b.down{color:var(--bad)}
+
+/* ---------- dashboard ---------- */
+.meav{width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--bg);font-weight:700;font-size:15px;flex:none}
+.feature{background:var(--surface);border-radius:var(--r-lg);overflow:hidden;text-align:left;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.feature > svg,.feature > img{display:block;width:100%;height:150px;object-fit:cover}
+.fcap{display:flex;flex-direction:column;gap:6px;padding:12px 14px 14px}
+.fcap b{font-size:16px;line-height:1.4}
+.dashfix{display:flex;align-items:center;gap:12px;width:100%}
+.dfi{width:48px;height:48px;border-radius:14px;background:var(--accent-soft);color:var(--accent-text);display:grid;place-items:center;flex:none}
+.tile{display:flex;flex-direction:column;gap:2px;text-align:left}
+.tile small{font-size:13px;color:var(--muted);font-weight:600}
+.tile b{font-size:20px;font-weight:600}
+
+/* ---------- page layouts (web) ---------- */
+.hello{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
+.mecols{display:flex;flex-direction:column;gap:14px}
+.diagph{flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;min-height:260px;border:1.5px dashed var(--line);background:transparent;color:var(--muted)}
+.diagph b{color:var(--ink);font-size:16px}
+.diagph svg{width:32px;height:32px;stroke:var(--accent)}
+.diagph .note{max-width:240px}
+#diagOut > div:not(.diagph){display:flex;flex-direction:column;gap:14px}
+@media (min-width:900px){
+  .hello{font-size:26px}
+  .dash{grid-template-columns:minmax(0,1fr) 360px}
+  .dash .feature{flex-direction:row}
+  .dash .feature > svg,.dash .feature > img{width:52%;height:auto;min-height:240px;flex:none}
+  .dash .fcap{justify-content:center;padding:22px}
+  .dash .fcap b{font-size:20px}
+  .dash .hscroll{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}
+  .dash .mini{flex:none}
+  .dash .mini svg,.dash .mini img.tph{height:130px}
+  .fixsplit{grid-template-columns:minmax(0,1fr) minmax(360px,440px)}
+  .fixsplit .symgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .fixsplit .upl{min-height:200px}
+  .fixsplit > .a1{position:sticky;top:24px}
+  .split > .a1 .quote{position:sticky;top:24px}
+  .mecols{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+  .mecols .full{grid-column:1 / -1}
+  .device,.profile{padding-inline:32px}
+  .device{padding-top:36px}
+  .device select{font-size:28px}
+  .profile{padding-top:36px}
+}
+@media (min-width:1200px){.fixsplit .symgrid{grid-template-columns:repeat(4,minmax(0,1fr))}.costin .grid2{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* ---------- me ---------- */
+.profile{display:flex;gap:14px;align-items:center;padding:20px 16px 0}
+.bigav{position:relative;width:68px;height:68px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:26px;font-weight:700;flex:none}
+.bigav i{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);background:#F5B700;color:#3A2A00;font-style:normal;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:5px;font-family:var(--mono)}
+.profile h2{margin:0;font-size:20px}
+.profile p{margin:0;font-size:13px;color:var(--muted)}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);text-align:center}
+.quick div{display:flex;flex-direction:column;align-items:center;gap:2px}
+.quick b{font-family:var(--mono);font-size:20px}
+.quick small{font-size:12px;color:var(--muted)}
+.thumbs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.thumbs button{flex:0 0 78px;height:78px;border-radius:12px;overflow:hidden}
+.thumbs svg{width:100%;height:100%;display:block}
+.prow{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.prow:first-child{border-top:0}
+.prow .pi{width:40px;height:40px;border-radius:10px;background:var(--sunk);display:grid;place-items:center}
+.prow div:nth-child(2){flex:1;min-width:0}
+.prow small{display:block;color:var(--muted);font-size:12.5px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--bg);border-radius:12px;padding:12px}
+.stat b{font-family:var(--mono);font-size:24px;font-weight:600;color:var(--accent-text);display:block;line-height:1.2}
+.stat span{font-size:12.5px;color:var(--muted);line-height:1.4;display:block}
+
+/* ---------- Discord skin ---------- */
+.frame{background:
+  radial-gradient(900px 520px at 85% -10%,rgba(236,72,189,.22),transparent 60%),
+  radial-gradient(800px 600px at 10% 0%,rgba(88,101,242,.30),transparent 60%),
+  var(--bg)}
+.top{background:rgba(10,13,58,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.nav{background:var(--desk);border-color:var(--line)}
+.titlebar h1,.hello,.device select,.profile h2,.sheethead h2,.card h2,.sec h2,.fcap b,.upl b,.nav .navbrand{font-family:var(--display);font-weight:800;letter-spacing:-.01em}
+.titlebar h1{font-weight:900}
+.logo{background:var(--grad)}
+.card{border:1px solid rgba(255,255,255,.04)}
+.btn{border-radius:var(--r-sm);font-weight:700}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover:not(:disabled){filter:brightness(1.1)}
+.btn.ghost{background:var(--sunk)}
+.chip{background:var(--surface);border-color:var(--line);border-radius:var(--r-lg)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.tag{border-radius:var(--r-lg);padding:2px 9px}
+.post{border:1px solid rgba(255,255,255,.04)}
+.post .kind{background:rgba(5,7,42,.82)}
+.post .kind.case{background:var(--magenta);color:#fff}
+.post .kind.q{background:var(--accent);color:#fff}
+.fab{background:var(--green);color:var(--green-ink);border-radius:var(--r-sm);box-shadow:0 10px 28px rgba(53,237,126,.28)}
+.sheetwrap{background:rgba(5,7,42,.66)}
+.sheet{border:1px solid var(--line)}
+.toast{background:#fff;color:var(--bg);font-weight:600}
+.quote{background:var(--grad);color:#fff;border-radius:28px;padding:24px}
+.quote .lbl{opacity:.85}
+.step b,.cnum{background:var(--magenta);color:#fff}
+.cstep.done .cnum{background:var(--accent)}
+.meav,.bigav{background:var(--grad);color:#fff}
+.upl{background:var(--grad);color:#fff;border-radius:28px;box-shadow:var(--shadow)}
+.upl.has{background:var(--surface);color:var(--ink)}
+.uplic{background:rgba(255,255,255,.18)}
+.feature{border-radius:28px;border:1px solid rgba(255,255,255,.04)}
+.banner{background:var(--accent-soft);color:#fff}
+.verify{background:var(--accent-soft)}
+.cref{color:var(--link)}
+.stat b{color:var(--green)}
+.dfi{background:var(--magenta);color:#fff}
+@media (min-width:900px){
+  .nav button{border-radius:var(--r-sm)}
+  .nav button:hover{background:var(--surface)}
+  .nav button[aria-current="page"]{background:var(--accent);color:#fff}
+  .nav button[aria-current="page"] svg{stroke:#fff}
+  .titlebar h1{font-size:40px!important;line-height:1.1}
+  .hello{font-size:34px}
+  .quote,.upl,.feature{border-radius:var(--r-xl)}
+  .quote{padding:32px}
+}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+
+
+<main class="frame" id="frame">
+  <div class="scroll" id="scroll"><div id="view"></div></div>
+  <nav class="nav" id="nav" aria-label="주요 메뉴"></nav>
+</main>
+
+<script>
+(function(){
+"use strict";
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
+
+/* ---------- icons ---------- */
+const P = {
+  home:'<path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/>',
+  community:'<circle cx="9" cy="8" r="3.2"/><path d="M3 19c.8-3.4 3.2-5.2 6-5.2s5.2 1.8 6 5.2M15.5 4.9a3.2 3.2 0 0 1 0 6.2M17.5 13.9c1.6.6 2.9 2.3 3.5 5.1"/>',
+  upload:'<path d="M12 16V4M7 9l5-5 5 5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>',
+  fix:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.1L4 16.7 7.3 20l5.3-5.3a4 4 0 0 0 5.1-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
+  cost:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15v2.5M8.5 18h.01M12 18h.01"/>',
+  prep:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M12 7v5M9 12h6M4 16h16"/>',
+  me:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
+  search:'<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+  bell:'<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"/>',
+  thumb:'<path d="M7 11v9H4v-9zM7 11l4-7a2 2 0 0 1 2.6 2.5L12.5 10H18a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 16.8 20H7"/>',
+  save:'<path d="M6 4h12v17l-6-4-6 4z"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  chev:'<path d="m9 6 6 6-6 6"/>',
+  camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+  spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+  printer:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M12 7v5M9 12h6"/>',
+  trash:'<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>'
+};
+const ic = (n, cls='') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>`;
+
+/* ---------- reference data ---------- */
+const PRINTERS = ['A1 mini','A1','P1S','X1C','K1','MK4'];
+const MAT = {
+  PLA:{nozzle:'190–220',bed:'55–65',fan:'100%',enc:'열어두기',dry:'50℃ · 8h',price:22000,note:'가장 무난한 소재. 밀폐형 프린터에서는 문을 열어 열 적체를 막아요.'},
+  PETG:{nozzle:'230–250',bed:'70–85',fan:'30–50%',enc:'선택',dry:'65℃ · 8h',price:24000,note:'습기에 약해 거미줄이 잘 생겨요. 텍스처 PEI 판에서는 너무 강하게 붙을 수 있어요.'},
+  ABS:{nozzle:'240–260',bed:'90–110',fan:'0–20%',enc:'필수',dry:'80℃ · 4h',price:25000,note:'수축이 커서 모서리가 들뜨기 쉬워요. 출력 중 문을 열지 마세요. 환기 필수.'},
+  ASA:{nozzle:'240–260',bed:'90–110',fan:'0–30%',enc:'필수',dry:'80℃ · 4h',price:32000,note:'자외선에 강해 야외 부품에 적합해요. ABS와 같은 들뜸 대책이 필요해요.'},
+  TPU:{nozzle:'210–230',bed:'30–50',fan:'50–100%',enc:'열어두기',dry:'55℃ · 8h',price:38000,note:'유연 소재라 느리게 출력해야 해요. 리트랙션은 최소로 줄이세요.'}
+};
+const IMG = {spaghetti:'printmate-assets/spaghetti.jpg',underext:'printmate-assets/underext.jpg',extruder:'printmate-assets/extruder.jpg'};
+const SYM = {
+  spaghetti:{label:'실 뭉치(스파게티)가 됐어요',hint:'출력물이 떨어지고 공중에 실을 뿜어요',img:IMG.spaghetti,causes:[
+    {t:'출력 도중 출력물이 바닥에서 떨어짐',w:3,fix:'첫 층 접착부터 점검하세요. 베드를 IPA로 닦고 브림 5mm를 추가하세요.'},
+    {t:'들뜬 모서리에 노즐이 부딪힘',w:2,mat:{ABS:2,ASA:2,PETG:1},fix:'들뜸 대책(챔버 예열, 팬 낮추기)을 먼저 적용하고 Z-hop을 켜세요.'},
+    {t:'받침 없는 오버행·서포트 부족',w:2,fix:'슬라이서 미리보기에서 공중에 뜬 구간을 확인하고 서포트를 추가하세요.'},
+    {t:'노즐에 붙은 덩어리가 출력물을 끌고 감',w:1,fix:'노즐을 청소하고, 실리콘 노즐 덮개(삭스)를 씌우세요.'}]},
+  underext:{label:'윗면·벽에 틈이 생겨요',hint:'선 사이가 벌어지고 얇게 비쳐요',img:IMG.underext,causes:[
+    {t:'노즐 부분 막힘',w:2,fix:'콜드 풀(cold pull)로 노즐 내부를 청소하세요.'},
+    {t:'출력 속도 대비 온도 부족',w:2,mat:{PETG:1},fix:'속도를 낮추거나 노즐 온도를 10℃ 올리세요.'},
+    {t:'유량(Flow) 보정이 안 됨',w:2,fix:'슬라이서의 유량 보정 출력을 실행해 값을 맞추세요.'},
+    {t:'윗면 레이어 수 부족',w:1,fix:'윗면(Top) 레이어를 5겹 이상으로 늘리세요.'},
+    {t:'필라멘트 엉킴·습기',w:1,mat:{PETG:1,TPU:1},fix:'스풀이 자유롭게 도는지 확인하고 건조하세요.'}]},
+  clog:{label:'중간에 압출이 멈춰요',hint:'노즐에서 아무것도 안 나오거나 딸깍 소리가 나요',img:IMG.extruder,causes:[
+    {t:'열 적체(heat creep)',w:1,mat:{PLA:3},fix:'밀폐형 프린터라면 상단 덮개나 문을 열고 출력하세요.'},
+    {t:'유연 소재 속도 과다',w:0,mat:{TPU:4},fix:'TPU는 25mm/s 이하로, 리트랙션은 끄거나 최소로 설정하세요.'},
+    {t:'노즐 온도가 낮음',w:2,fix:'소재 권장 범위 상단으로 온도를 올리세요.'},
+    {t:'필라멘트 경로 이물질·꺾임',w:2,fix:'PTFE 튜브와 익스트루더 기어의 찌꺼기를 청소하세요.'},
+    {t:'툴헤드 커넥터 접촉 불량',w:1,fix:'전원을 끄고 툴헤드 보드의 히터·서미스터·팬 커넥터가 끝까지 꽂혔는지 확인하세요.'}]},
+  adhesion:{label:'첫 층이 바닥에 안 붙어요',hint:'시작하자마자 떨어지거나 노즐에 딸려와요',shape:'lift',causes:[
+    {t:'첫 층 노즐 높이가 높음',w:3,fix:'자동 레벨링을 다시 실행하고 Z 오프셋을 0.02mm씩 낮춰 테스트하세요.'},
+    {t:'베드 표면의 기름·먼지',w:3,fix:'IPA(이소프로필 알코올)로 베드를 닦고 출력면을 손으로 만지지 마세요.'},
+    {t:'베드 온도가 소재보다 낮음',w:2,mat:{PETG:1,ABS:1,ASA:1},fix:'소재 권장 베드 온도로 올리세요.'},
+    {t:'첫 층 속도가 너무 빠름',w:1,fix:'첫 층 속도를 30mm/s 이하로 낮추세요.'}]},
+  warping:{label:'모서리가 들떠요',hint:'바닥은 붙었는데 가장자리가 휘어 올라와요',shape:'warp',causes:[
+    {t:'외부 바람·온도차 (인클로저 없음)',w:2,mat:{ABS:3,ASA:3},fix:'문을 닫고 챔버를 예열한 뒤 출력하세요. 에어컨 바람을 피하세요.'},
+    {t:'냉각 팬이 너무 강함',w:1,mat:{ABS:2,ASA:2,PETG:1},fix:'팬 속도를 소재 권장값으로 낮추세요.'},
+    {t:'접지 면적 부족',w:2,fix:'브림 5–8mm를 추가하거나 모서리에 마우스 이어를 붙이세요.'},
+    {t:'베드 온도 부족',w:2,fix:'베드 온도를 5℃씩 올려 보세요.'}]},
+  stringing:{label:'실처럼 거미줄이 생겨요',hint:'출력물 사이에 머리카락 같은 실이 남아요',shape:'towers',causes:[
+    {t:'필라멘트가 습기를 먹음',w:2,mat:{PETG:3,TPU:3},fix:'소재 권장 온도로 건조하세요. 출력 중 딱딱 튀는 소리가 나면 거의 확실해요.'},
+    {t:'노즐 온도가 높음',w:2,fix:'노즐 온도를 5℃씩 내려 보세요.'},
+    {t:'리트랙션 길이·속도 부족',w:2,mat:{TPU:-2},fix:'리트랙션을 0.2mm씩 늘려 테스트하세요. TPU는 예외로 줄여야 해요.'},
+    {t:'이동 속도가 느림',w:1,fix:'이동 속도를 올리고 "벽 넘지 않기(Avoid crossing walls)"를 켜세요.'}]},
+  layershift:{label:'층이 옆으로 밀려요',hint:'중간부터 계단처럼 어긋나요',shape:'shift',causes:[
+    {t:'벨트 장력 부족',w:3,fix:'X·Y 벨트 장력을 점검하고 제조사 가이드대로 조이세요.'},
+    {t:'속도·가속도가 너무 높음',w:2,fix:'가속도를 20% 낮춰서 다시 출력해 보세요.'},
+    {t:'노즐이 출력물에 걸림',w:2,mat:{ABS:1,ASA:1},fix:'들뜸을 먼저 잡고, Z-hop(이동 시 노즐 들기)을 켜세요.'},
+    {t:'레일 주변 장애물',w:1,fix:'케이블과 이물질이 축 이동을 막지 않는지 확인하세요.'}]},
+};
+const THUMB_COLORS = ['#3FAE63','#E8833A','#4A86E8','#D9534F','#8E6CCF','#E4B33B','#3BB5B0','#5B6770'];
+
+const SEED = [
+  {id:'c1',type:'case',fixes:[0,1,2],title:'PETG 거미줄, 건조하고 리트랙션 0.8mm로 해결',author:'layer_line',printer:'A1 mini',mat:'PETG',sym:'stringing',likes:412,solved:38,shape:'towers',color:'#3BB5B0',bg:'#E3F1EF',h:230,
+   problem:'케이블 클립 여러 개를 한 판에 뽑으면 사이사이에 머리카락 같은 실이 잔뜩 생겼어요.',cause:'개봉한 지 3주 된 필라멘트가 습기를 먹었고, 노즐 온도도 높았어요.',solution:'65℃로 8시간 건조한 뒤 노즐 온도를 245℃에서 235℃로 내리고 리트랙션을 0.8mm로 늘렸어요.',settings:[['노즐','235℃'],['리트랙션','0.8mm'],['이동 속도','300mm/s'],['건조','65℃ · 8h']]},
+  {id:'c8',type:'case',fixes:[0],title:'밤새 출력했더니 스파게티 뭉치, 원인은 들뜬 바닥',author:'night_shift',printer:'A1 mini',mat:'PLA',sym:'spaghetti',likes:466,solved:41,img:IMG.spaghetti,h:250,
+   problem:'자기 전에 건 타워 모델이 아침에 보니 실 뭉치로 변해 있었어요.',cause:'중간쯤 출력물이 바닥에서 떨어져 노즐이 허공에 계속 압출했어요. 바닥 면적이 좁은 모델이었어요.',solution:'브림 6mm를 추가하고 베드를 IPA로 닦았어요. 긴 출력은 스파게티 감지(AI 모니터링)를 켜 두어요.',settings:[['브림','6mm'],['베드','65℃'],['첫 층 속도','25mm/s'],['감지','스파게티 감지 켜기']]},
+  {id:'m1',type:'model',title:'프린트 인 플레이스 기어 큐브',author:'gearhead',printer:'P1S',mat:'PLA',likes:637,shape:'gear',color:'#E8833A',bg:'#F6EBDD',h:200,
+   desc:'조립 없이 한 번에 출력되는 회전 기어 큐브. 공차 0.3mm 기준으로 설계했어요.',settings:[['소재','PLA'],['레이어','0.16mm'],['인필','15%'],['서포트','필요 없음'],['예상 시간','2h 40m'],['사용량','46g']]},
+  {id:'k1',type:'collab',title:'PETG 브래킷 200개 소량 외주 구해요 (2주 납기)',author:'한빛목공',printer:'—',mat:'PETG',likes:58,shape:'bracket',color:'#5B6770',bg:'#E7EAEC',h:190,
+   desc:'원목 선반에 들어가는 고정 브래킷입니다. 도면과 STL 있어요. 서울 성수 근처 직접 수령 가능하면 좋아요.',settings:[['수량','200개'],['소재','PETG 블랙'],['납기','2주'],['지역','서울 성동구'],['개당 사용량','18g'],['개당 시간','35m']],qty:200,grams:18,hours:0.58},
+  {id:'c2',type:'case',fixes:[0,1,2],title:'ABS 모서리 들뜸, 챔버 예열과 브림 8mm로 잡았어요',author:'abs_or_die',printer:'P1S',mat:'ABS',sym:'warping',likes:357,solved:29,shape:'warp',color:'#D9534F',bg:'#F5E4E2',h:200,
+   problem:'150mm 길이 하우징 양쪽 끝이 3mm 넘게 들떴어요.',cause:'문을 열어 둔 상태였고 팬이 40%로 돌고 있었어요.',solution:'문을 닫고 베드 100℃로 10분 챔버 예열, 팬 10%, 브림 8mm를 추가했어요.',settings:[['베드','100℃'],['팬','10%'],['브림','8mm'],['챔버 예열','10분']]},
+  {id:'c3',type:'case',fixes:[1],title:'첫 층이 안 붙던 이유는 손자국이었어요',author:'newbie_maker',printer:'A1',mat:'PLA',sym:'adhesion',likes:288,solved:54,shape:'lift',color:'#3FAE63',bg:'#E4F2E6',h:180,
+   problem:'출력 시작 1분 만에 첫 줄이 노즐에 말려 올라왔어요. 레벨링은 매번 했어요.',cause:'판을 꺼낼 때 손으로 잡은 자리에 유분이 남아 있었어요.',solution:'주방세제로 판을 씻고 말린 뒤 IPA로 마무리했어요. 이후로는 가장자리만 잡아요.',settings:[['베드','60℃'],['첫 층 속도','30mm/s'],['청소','세제 → IPA']]},
+  {id:'m2',type:'model',title:'나선 꽃병 (꽃병 모드 전용)',author:'vase_mode',printer:'A1',mat:'PLA',likes:521,shape:'vase',color:'#8E6CCF',bg:'#ECE6F5',h:250,
+   desc:'벽 한 겹으로 출력하는 꽃병. 실크 PLA로 뽑으면 광택이 예뻐요. 물은 담지 마세요.',settings:[['소재','PLA (실크 추천)'],['모드','Spiral vase'],['노즐','0.6mm 추천'],['예상 시간','1h 50m'],['사용량','62g']]},
+  {id:'c4',type:'case',fixes:[0,1],title:'K1 고속 출력 중 층 밀림, 벨트 장력 조정',author:'speedrun3d',printer:'K1',mat:'PLA',sym:'layershift',likes:196,solved:17,shape:'shift',color:'#4A86E8',bg:'#E3ECF8',h:200,
+   problem:'높이 40mm쯤에서 출력물이 Y축 방향으로 2mm 밀렸어요.',cause:'Y축 벨트가 느슨해져 고가속 구간에서 이가 건너뛰었어요.',solution:'벨트 장력을 재조정하고 가속도를 20,000에서 12,000mm/s²로 낮췄어요.',settings:[['가속도','12,000mm/s²'],['Z-hop','0.4mm'],['벨트','장력 재조정']]},
+  {id:'k2',type:'collab',title:'ASA 시제품 하우징 출력 파트너 찾습니다',author:'메디팩토리',printer:'—',mat:'ASA',likes:41,shape:'box',color:'#E4B33B',bg:'#F5EEDC',h:180,
+   desc:'야외용 센서 하우징 시제품 10세트. 표면 후가공(샌딩)까지 가능하신 분을 찾아요. 반복 발주 예정이에요.',settings:[['수량','10세트'],['소재','ASA 화이트'],['납기','3주'],['지역','경기 성남'],['세트당 사용량','140g'],['세트당 시간','7h']],qty:10,grams:140,hours:7},
+  {id:'c5',type:'case',fixes:[1],title:'TPU가 익스트루더에서 엉킴, 속도 25mm/s로 해결',author:'flex_lab',printer:'P1S',mat:'TPU',sym:'clog',likes:143,solved:12,shape:'clog',color:'#E8833A',bg:'#F7EBE0',h:210,
+   problem:'폰 케이스 출력 중 압출이 멈추고 기어에서 딸깍 소리가 났어요.',cause:'기본 프로파일 속도가 TPU에는 너무 빨라 필라멘트가 기어 사이에서 꺾였어요.',solution:'출력 속도 25mm/s, 리트랙션 끄기, AMS를 거치지 않고 외부 스풀로 직결했어요.',settings:[['속도','25mm/s'],['리트랙션','끄기'],['급지','외부 스풀']]},
+  {id:'c6',type:'case',fixes:[2,1],title:'얇은 벽에 생긴 구멍, 유량 보정으로 해결',author:'calibrate_me',printer:'MK4',mat:'PETG',sym:'underext',likes:174,solved:21,shape:'gaps',color:'#3FAE63',bg:'#E4F2E6',h:220,
+   problem:'꽃병 벽 사이로 빛이 비치고 군데군데 구멍이 났어요.',cause:'유량 비율이 0.92로 낮게 잡혀 있었어요.',solution:'유량 보정 테스트를 출력해 0.98로 맞추고, 노즐 온도를 240℃로 올렸어요.',settings:[['유량','0.98'],['노즐','240℃'],['벽 선 수','3']]},
+  {id:'c7',type:'case',fixes:[0],title:'X1C에서 PLA 압출이 멈춤, 원인은 챔버 열',author:'closed_door',printer:'X1C',mat:'PLA',sym:'clog',likes:221,solved:26,shape:'clog',color:'#4A86E8',bg:'#E3ECF8',h:200,
+   problem:'여름에 긴 출력을 하면 2시간쯤 지나 압출이 끊겼어요.',cause:'문과 상단 덮개를 닫은 채 PLA를 출력해 히트브레이크까지 열이 올라왔어요.',solution:'상단 유리 덮개를 열고 출력했어요. 이후 같은 증상이 없어요.',settings:[['덮개','상단 개방'],['챔버','35℃ 이하'],['노즐','215℃']]},
+  {id:'m3',type:'model',title:'보트 캘리브레이션 모델',author:'calibrate_me',printer:'A1 mini',mat:'PLA',likes:298,shape:'boat',color:'#D9534F',bg:'#F5E4E2',h:190,
+   desc:'오버행, 브릿지, 작은 구멍을 한 번에 점검하는 테스트 모델. 새 소재를 쓰기 전에 뽑아 보세요.',settings:[['소재','PLA'],['레이어','0.2mm'],['인필','10%'],['예상 시간','45m'],['사용량','14g']]}
+];
+
+/* ---------- state ---------- */
+const KEY = 'printmate.v1';
+let st;
+function load(){ let s={}; try{ s = JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){}
+  return Object.assign({tab:'home',learn:{},coachLog:[],feed:'rec',q:'',liked:{},saved:{},solved:{},posts:[],quotes:[],checks:{},printed:3,
+    printers:[{id:'p1',name:'3DP-039-620',model:'A1 mini'},{id:'p2',name:'작업실 P1S',model:'P1S'}],activePrinter:'p1',
+    diag:{printer:'A1 mini',mat:'PLA',sym:null,ran:false,done:{}},
+    cost:{mat:'PLA',kg:22000,g:120,h:6.5,qty:1,w:350,kwh:130,dev:800000,life:5000,min:20,wage:15000,fail:10,margin:30},
+    prepMat:'PLA'}, s); }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(st)); }catch(e){} }
+st = load();
+let photoURL = null;
+const allPosts = () => st.posts.concat(SEED);
+const byId = id => allPosts().find(p => p.id === id);
+const likeCount = p => (p.likes||0) + (st.liked[p.id]?1:0);
+const solvedCount = p => (p.solved||0) + (st.solved[p.id]?1:0);
+
+/* ---------- procedural thumbnails (layer-line look) ---------- */
+function shade(hex, amt){ const n=parseInt(hex.slice(1),16); let r=n>>16,g=n>>8&255,b=n&255;
+  const f=v=>Math.max(0,Math.min(255,Math.round(amt<0?v*(1+amt):v+(255-v)*amt)));
+  return '#'+((1<<24)|(f(r)<<16)|(f(g)<<8)|f(b)).toString(16).slice(1); }
+function gearPath(cx,cy,ro,ri,n){ let d=''; for(let i=0;i<n*2;i++){ const a0=Math.PI*i/n, a1=Math.PI*(i+1)/n, r=i%2?ri:ro;
+  const p=(a)=>(cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1);
+  d+=(i?'L':'M')+p(a0+0.08)+'L'+p(a1-0.08); } return d+'Z'; }
+function shapes(p, H){
+  const B=H-34, c=p.color, d=shade(c,-0.22), l=shade(c,0.22), bg=p.bg;
+  switch(p.shape){
+    case 'towers': { const s=[]; for(let i=0;i<7;i++){ const y=B-82+i*11; s.push(`<path d="M76 ${y} Q100 ${y+10+i%3*3} 124 ${y+2}" stroke="${l}" stroke-width=".9" fill="none" opacity=".9"/>`); }
+      return {parts:[[`M48 ${B}h28v-96h-28z`,c],[`M124 ${B}h28v-96h-28z`,c],[`M48 ${B-96}h28v-6h-28z`,l],[`M124 ${B-96}h28v-6h-28z`,l]],extra:s.join('')}; }
+    case 'warp': return {parts:[[`M36 ${B}L120 ${B}Q146 ${B-1} 164 ${B-20}L164 ${B-48}Q144 ${B-32} 120 ${B-30}L36 ${B-30}Z`,c],[`M36 ${B-30}L120 ${B-30}Q144 ${B-32} 164 ${B-48}L160 ${B-52}Q140 ${B-37} 118 ${B-35}L40 ${B-35}Z`,l]],
+      extra:`<path d="M128 ${B+1}Q148 ${B} 163 ${B-18}" stroke="${shade(bg,-0.3)}" stroke-dasharray="3 3" fill="none"/>`};
+    case 'lift': return {parts:[[`M44 ${B-20}Q56 ${B-2} 76 ${B-2}L124 ${B-2}Q144 ${B-2} 156 ${B-20}L156 ${B-46}L44 ${B-46}Z`,c],[`M44 ${B-46}h112v-6H44z`,l]],
+      extra:`<path d="M90 ${B-62}q8 -14 4 -28q-3 -10 6 -16" stroke="${c}" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="92" y="${B-122}" width="16" height="16" rx="3" fill="#B9BFBB"/>`};
+    case 'shift': return {parts:[[`M56 ${B}h80v-48h-80z`,c],[`M70 ${B-48}h80v-50h-80z`,c],[`M70 ${B-98}h80v-6h-80z`,l]],extra:`<path d="M136 ${B-48}h14" stroke="${d}" stroke-width="2"/>`};
+    case 'vase': return {parts:[[`M76 ${B}C58 ${B-34} 58 ${B-74} 82 ${B-108}C88 ${B-118} 84 ${B-132} 78 ${B-142}L122 ${B-142}C116 ${B-132} 112 ${B-118} 118 ${B-108}C142 ${B-74} 142 ${B-34} 124 ${B}Z`,c]],extra:''};
+    case 'gaps': return {parts:[[`M76 ${B}C60 ${B-30} 60 ${B-66} 80 ${B-96}L80 ${B-120}L120 ${B-120}L120 ${B-96}C140 ${B-66} 140 ${B-30} 124 ${B}Z`,c]],
+      extra:[[84,B-40,10],[106,B-62,8],[92,B-88,12],[112,B-24,7],[96,B-110,9]].map(([x,y,w])=>`<rect x="${x}" y="${y}" width="${w}" height="3" fill="${bg}"/>`).join('')};
+    case 'clog': return {parts:[[`M76 ${B}C60 ${B-28} 60 ${B-50} 68 ${B-62}L132 ${B-62}C140 ${B-50} 140 ${B-28} 124 ${B}Z`,c]],
+      extra:`<path d="M68 ${B-62}C70 ${B-90} 82 ${B-110} 80 ${B-130}L120 ${B-130}C118 ${B-110} 130 ${B-90} 132 ${B-62}" stroke="${d}" stroke-dasharray="4 4" fill="none" stroke-width="1.4"/><path d="M92 ${B-150}h16l-8 12z" fill="#9AA29C"/>`};
+    case 'gear': { const cy=B-56; return {parts:[[gearPath(100,cy,50,41,12),c],[`M100 ${cy}m-26 0a26 26 0 1 0 52 0a26 26 0 1 0 -52 0`,d]],extra:`<circle cx="100" cy="${cy}" r="9" fill="${bg}"/>`}; }
+    case 'bracket': return {parts:[[`M44 ${B}H156V${B-24}H74V${B-96}H44Z`,c],[`M44 ${B-96}h30v-6H44z`,l]],extra:`<circle cx="59" cy="${B-70}" r="6" fill="${bg}"/><circle cx="59" cy="${B-40}" r="6" fill="${bg}"/><circle cx="118" cy="${B-12}" r="6" fill="${bg}"/>`};
+    case 'box': return {parts:[[`M100 ${B}L150 ${B-26}V${B-82}L100 ${B-56}Z`,d],[`M100 ${B}L50 ${B-26}V${B-82}L100 ${B-56}Z`,c],[`M50 ${B-82}L100 ${B-108}L150 ${B-82}L100 ${B-56}Z`,l]],extra:`<circle cx="75" cy="${B-50}" r="7" fill="${shade(c,-0.35)}"/>`};
+    case 'boat': return {parts:[[`M40 ${B-34}H160L144 ${B}H60Z`,c],[`M76 ${B-34}V${B-74}H128V${B-34}Z`,l],[`M112 ${B-74}V${B-94}H124V${B-74}Z`,d]],extra:`<circle cx="92" cy="${B-54}" r="7" fill="${bg}"/><circle cx="112" cy="${B-54}" r="7" fill="${bg}"/>`};
+  }
+  return {parts:[],extra:''};
+}
+function thumb(p, H, uid){
+  H = H || p.h || 200;
+  if(p.img) return `<img class="tph" src="${p.img}" alt="${esc(p.title)} 사진" loading="lazy" style="aspect-ratio:200/${H}">`;
+  const id = 't'+uid; const s = shapes(p,H), B = H-34;
+  const body = s.parts.map(([d,f])=>`<path d="${d}" fill="${f}"/><path d="${d}" fill="url(#${id}l)"/>`).join('');
+  return `<svg viewBox="0 0 200 ${H}" role="img" aria-label="${esc(p.title)} 미리보기" preserveAspectRatio="xMidYMid slice">
+  <defs><pattern id="${id}l" width="6" height="3.2" patternUnits="userSpaceOnUse"><rect width="6" height="1.1" fill="rgba(0,0,0,.13)"/></pattern>
+  <linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.bg}"/><stop offset="1" stop-color="${shade(p.bg,-0.07)}"/></linearGradient></defs>
+  <rect width="200" height="${H}" fill="url(#${id}g)"/>
+  <rect x="14" y="${B}" width="172" height="12" rx="2" fill="#2B302D"/><path d="M14 ${B+4}h172M14 ${B+8}h172" stroke="#3A403C" stroke-width=".8"/>
+  ${body}${s.extra}</svg>`;
+}
+let uidN = 0; const uid = () => (++uidN);
+
+/* ---------- shell ---------- */
+const TABS = [['home','대시보드'],['community','커뮤니티'],['fix','문제해결'],['cost','원가계산'],['prep','출력준비']];
+function renderNav(){ $('#nav').innerHTML = `<div class="navbrand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M5 18h14M7 14h10M9 10h6M11 6h2"/></svg></span>PrintMate</div>`
+  + TABS.map(([k,l])=>`<button data-tab="${k}" ${st.tab===k?'aria-current="page"':''}>${ic(k)}<span>${l}</span></button>`).join('')
+  + `<button class="navme" data-tab="me" ${st.tab==='me'?'aria-current="page"':''}><span class="meav">S</span><span>메이커 스튜디오<small>내 정보 · 프린터 ${st.printers.length}대</small></span></button><p class="navfoot">AI 진단은 규칙 기반 시연이에요. 기록은 이 브라우저에만 저장돼요.</p>`; }
+function go(tab, opts){ st.tab = tab; save(); renderNav(); render(); $('#scroll').scrollTop = 0; if(opts&&opts.after) opts.after(); }
+function render(){
+  closeSheet(true);
+  const v = $('#view');
+  ({home:viewHome,community:viewCommunity,fix:viewFix,cost:viewCost,prep:viewPrep,me:viewMe})[st.tab](v);
+  const old = $('#fab'); if(old) old.remove();
+  if(st.tab==='community'){ const f=document.createElement('button'); f.id='fab'; f.className='fab'; f.innerHTML=ic('plus')+'사례 공유'; f.onclick=()=>openPostForm(); $('#frame').appendChild(f); }
+}
+function toast(msg){ const old=$('.toast'); if(old) old.remove(); const t=document.createElement('div'); t.className='toast'; t.setAttribute('role','status'); t.textContent=msg; $('#frame').appendChild(t); setTimeout(()=>t.remove(),2200); }
+
+/* ---------- dashboard ---------- */
+function viewHome(v){
+  const pr = st.printers.find(p=>p.id===st.activePrinter) || st.printers[0];
+  const cases = allPosts().filter(p=>p.type==='case').sort((a,b)=>((b.printer===pr.model)*1000+likeCount(b))-((a.printer===pr.model)*1000+likeCount(a)));
+  const feat = cases[0], rest = allPosts().filter(p=>p!==feat).sort((a,b)=>likeCount(b)-likeCount(a)).slice(0,6);
+  const r = calc(), list = checklist(st.prepMat), ck = st.checks[st.prepMat]||{}, doneN = list.filter(x=>ck[x[0]]).length;
+  v.className='view';
+  v.innerHTML = `
+  <div class="top" style="padding-bottom:12px">
+    <div class="searchrow">
+      <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M5 18h14M7 14h10M9 10h6M11 6h2"/></svg></span>
+      <div style="flex:1;min-width:0"><div class="hello">안녕하세요, 메이커 스튜디오님</div><div class="note">${esc(pr.name)} · ${esc(pr.model)} 연결됨</div></div>
+      <button class="bell" aria-label="알림 3개" data-act="bell">${ic('bell')}<b>3</b></button>
+      <button class="meav mob-only" data-tab="me" aria-label="내 정보">S</button>
+    </div>
+  </div>
+  <div class="pad split dash">
+    <div class="main"><section class="sec" aria-label="커뮤니티">
+      <div class="sechead"><h2>커뮤니티</h2><button class="more" data-tab="community">전체 보기 ${ic('chev','sm')}</button></div>
+      ${feat?`<button class="feature" data-open="${feat.id}">${thumb(feat,150,uid())}
+        <span class="fcap"><span class="tag ok" style="align-self:flex-start">${ic('check','sm')}${esc(pr.model)} 사용자 해결 사례</span><b>${esc(feat.title)}</b><span class="note">${esc(feat.printer)} · ${esc(feat.mat)} · <span style="color:var(--accent-text);font-weight:600">${solvedCount(feat)}명 해결</span> · 좋아요 <span class="mono">${likeCount(feat)}</span></span></span></button>`:''}
+      <div class="hscroll">${rest.map(p=>`<button class="mini" data-open="${p.id}" style="background:var(--surface)">${thumb(p,120,uid())}<div>${esc(p.title)}<small>${KIND[p.type][0]} · ${esc(p.author)}</small></div></button>`).join('')}</div>
+      <div class="chips"><button class="chip" data-gofeed="case">해결 사례</button><button class="chip" data-gofeed="model">모델</button><button class="chip" data-gofeed="collab">협업·외주</button><button class="chip" data-share-new>${ic('plus','sm')} 사례 공유</button></div>
+    </section></div>
+    <div class="a1">
+    <button class="card dashfix" data-tab="fix">
+      <span class="dfi">${ic('camera')}</span>
+      <span style="flex:1;min-width:0;text-align:left"><b style="display:block;font-size:16px">출력이 이상한가요?</b><span class="note">AI 코치 ${coachVersion()} · 내 피드백 ${st.coachLog.length}건 반영</span></span>
+      ${ic('chev')}
+    </button>
+    <div class="grid2">
+      <button class="card tile" data-tab="cost"><small>원가계산</small><b class="mono">${won(r.unit)}</b><span class="note">${esc(st.cost.mat)} · ${esc(st.cost.g)}g 개당 견적 · 저장 ${st.quotes.length}건</span></button>
+      <button class="card tile" data-tab="prep"><small>출력준비</small><b class="mono">${doneN}/${list.length}</b><span class="note">${esc(st.prepMat)} 체크리스트</span><span class="prog" style="margin-top:6px"><i style="width:${doneN/list.length*100}%"></i></span></button>
+    </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- community ---------- */
+const FEEDS = [['rec','맞춤 추천'],['case','해결 사례'],['model','모델'],['collab','협업·외주'],['saved','저장됨']];
+const KIND = {case:['해결 사례','case'],model:['모델',''],collab:['협업',''],question:['질문','q']};
+function viewCommunity(v){
+  const pr = st.printers.find(p=>p.id===st.activePrinter) || st.printers[0];
+  v.className='view';
+  v.innerHTML = `
+  <div class="top">
+    <div class="searchrow">
+      <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M5 18h14M7 14h10M9 10h6M11 6h2"/></svg></span>
+      <label class="search">${ic('search','sm')}<input id="q" type="search" placeholder="증상, 프린터, 소재로 검색" value="${esc(st.q)}" aria-label="커뮤니티 검색"></label>
+      <button class="bell" aria-label="알림 3개" data-act="bell">${ic('bell')}<b>3</b></button>
+    </div>
+    <div class="tabs" role="tablist">${FEEDS.map(([k,l])=>`<button role="tab" data-feed="${k}" aria-selected="${st.feed===k}">${l}</button>`).join('')}</div>
+  </div>
+  <div class="pad" style="display:flex;flex-direction:column;gap:12px">
+    ${st.feed==='rec'?`<div class="banner">${ic('spark','sm')}<span><b>${esc(pr?pr.model:'내 프린터')}</b> 사용자가 해결한 사례를 먼저 보여드려요</span></div>`:''}
+    <div id="feed"></div>
+  </div>`;
+  drawFeed();
+}
+function feedItems(){
+  const pr = st.printers.find(p=>p.id===st.activePrinter);
+  let list = allPosts();
+  if(st.feed==='case') list = list.filter(p=>p.type==='case'||p.type==='question');
+  else if(st.feed==='model') list = list.filter(p=>p.type==='model');
+  else if(st.feed==='collab') list = list.filter(p=>p.type==='collab');
+  else if(st.feed==='saved') list = list.filter(p=>st.saved[p.id]);
+  const q = st.q.trim().toLowerCase();
+  if(q) list = list.filter(p=>[p.title,p.printer,p.mat,p.author,p.sym?SYM[p.sym].label:'',p.problem||'',p.desc||''].join(' ').toLowerCase().includes(q));
+  if(st.feed==='rec'){ const m = pr?pr.model:''; list = list.slice().sort((a,b)=>((b.printer===m)*1000+likeCount(b)+(b.mine?5000:0))-((a.printer===m)*1000+likeCount(a)+(a.mine?5000:0))); }
+  return list;
+}
+function postCard(p){
+  const k = KIND[p.type]; const u = uid();
+  const spec = p.type==='collab' ? `${esc(p.mat)} · ${esc(p.settings[0][1])} · ${esc(p.settings[2][1])}` : `${esc(p.printer)} · ${esc(p.mat)}`;
+  return `<button class="post" data-open="${p.id}">
+    <span class="th">${thumb(p,p.h,u)}<span class="kind ${k[1]}">${p.type==='case'&&solvedCount(p)?ic('check','sm'):''}${k[0]}</span></span>
+    <span class="body"><h3>${esc(p.title)}</h3><span class="spec">${spec}${p.type==='case'?` · <span style="color:var(--accent-text);font-weight:600">${solvedCount(p)}명 해결</span>`:''}</span>
+    <span class="foot"><span class="who"><span class="av" style="background:${avColor(p.author)}">${esc(p.author.slice(0,1).toUpperCase())}</span><span>${esc(p.author)}</span></span>
+    <span class="like" role="button" tabindex="0" data-like="${p.id}" aria-pressed="${!!st.liked[p.id]}" aria-label="좋아요">${ic('thumb','sm')}<span class="mono">${likeCount(p)}</span></span></span></span>
+  </button>`;
+}
+function avColor(s){ let h=0; for(const ch of s) h=(h*31+ch.charCodeAt(0))>>>0; return THUMB_COLORS[h%THUMB_COLORS.length]; }
+function drawFeed(){
+  const list = feedItems(); const el = $('#feed');
+  if(!list.length){ el.innerHTML = `<div class="empty">${st.feed==='saved'?'저장한 게시물이 아직 없어요.<br>게시물을 열고 저장을 눌러 보세요.':'검색 결과가 없어요. 증상을 다른 말로 검색해 보세요.'}</div>`; return; }
+  const w = el.clientWidth || 360, n = w>=1000?5:w>=760?4:w>=540?3:2;
+  const cols=Array.from({length:n},()=>[]), hs=Array(n).fill(0);
+  list.forEach(p=>{ const i = hs.indexOf(Math.min(...hs)); cols[i].push(p); hs[i]+= (p.h||200)+110; });
+  el.innerHTML = `<div class="masonry" style="grid-template-columns:repeat(${n},minmax(0,1fr))">${cols.map(c=>`<div class="col">${c.map(postCard).join('')}</div>`).join('')}</div>`;
+}
+
+/* ---------- sheet ---------- */
+function openSheet(html, onMount){
+  closeSheet(true);
+  const w=document.createElement('div'); w.className='sheetwrap'; w.id='sheet';
+  w.innerHTML=`<div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
+  w.addEventListener('click',e=>{ if(e.target===w) closeSheet(); });
+  $('#frame').appendChild(w); if(onMount) onMount(w);
+  const f = w.querySelector('.x'); if(f) f.focus();
+}
+function closeSheet(){ const s=$('#sheet'); if(s) s.remove(); }
+function openPost(id){
+  const p = byId(id); if(!p) return;
+  const k = KIND[p.type];
+  let main = '';
+  if(p.type==='case'||p.type==='question'){
+    main = `<div class="chips"><span class="tag">${esc(p.printer)}</span><span class="tag">${esc(p.mat)}</span>${p.sym?`<span class="tag warn">${esc(SYM[p.sym].label)}</span>`:''}</div>
+    <div class="block"><h4>무슨 일이 있었나요</h4><p>${esc(p.problem||'')}</p></div>
+    ${p.cause?`<div class="block"><h4>원인</h4><p>${esc(p.cause)}</p></div>`:''}
+    ${p.solution?`<div class="block"><h4>해결 방법</h4><p>${esc(p.solution)}</p></div>`:''}
+    ${p.settings&&p.settings.length?`<div class="block"><h4>바꾼 설정</h4><div class="kv">${p.settings.map(([a,b])=>`<div>${esc(a)}</div><div>${esc(b)}</div>`).join('')}</div></div>`:''}
+    ${p.type==='case'?`<div class="verify"><span><strong class="mono" id="solvedN">${solvedCount(p)}명</strong>이 이 방법으로 해결했어요</span>
+      <button class="chip" data-solve="${p.id}" aria-pressed="${!!st.solved[p.id]}">${st.solved[p.id]?'해결 확인함':'나도 해결됐어요'}</button></div>`:
+      `<div class="banner">${ic('spark','sm')}<span>답변을 기다리는 질문이에요. 비슷한 사례는 문제해결 탭에서 확인할 수 있어요.</span></div>`}`;
+  } else if(p.type==='model'){
+    main = `<p style="margin:0">${esc(p.desc)}</p><div class="block"><h4>추천 출력 설정</h4><div class="kv">${p.settings.map(([a,b])=>`<div>${esc(a)}</div><div>${esc(b)}</div>`).join('')}</div></div>
+    <button class="btn primary block" data-toprep="${esc(p.mat)}">${ic('prep','sm')}이 모델로 출력 준비하기</button>`;
+  } else {
+    main = `<p style="margin:0">${esc(p.desc)}</p><div class="block"><h4>요청 내용</h4><div class="kv">${p.settings.map(([a,b])=>`<div>${esc(a)}</div><div>${esc(b)}</div>`).join('')}</div></div>
+    <button class="btn primary block" data-tocost="${p.id}">${ic('cost','sm')}원가계산으로 견적 내기</button>`;
+  }
+  openSheet(`<div class="sheethead"><div style="display:flex;flex-direction:column;gap:6px"><span class="tag ${p.type==='case'?'ok':p.type==='question'?'info':''}" style="align-self:flex-start">${k[0]}</span><h2>${esc(p.title)}</h2></div><button class="x" data-close aria-label="닫기">${ic('x','sm')}</button></div>
+    <div class="hero">${thumb(p,170,uid())}</div>
+    <div class="foot" style="display:flex;justify-content:space-between;align-items:center"><span class="who small"><span class="av" style="background:${avColor(p.author)}">${esc(p.author.slice(0,1).toUpperCase())}</span><span>${esc(p.author)}</span></span>
+      <span style="display:flex;gap:6px"><button class="chip" data-like="${p.id}" aria-pressed="${!!st.liked[p.id]}">좋아요 <span class="mono">${likeCount(p)}</span></button><button class="chip" data-save="${p.id}" aria-pressed="${!!st.saved[p.id]}">${st.saved[p.id]?'저장됨':'저장'}</button></span></div>
+    ${main}`);
+}
+
+/* ---------- post form ---------- */
+function openPostForm(pre){
+  pre = pre || {};
+  const type = pre.type || 'case';
+  openSheet(`<div class="sheethead"><h2>${type==='question'?'커뮤니티에 질문하기':'해결 사례 공유하기'}</h2><button class="x" data-close aria-label="닫기">${ic('x','sm')}</button></div>
+  <p class="note" style="margin:0">프린터와 소재, 바꾼 설정을 함께 남기면 같은 장비를 쓰는 사람의 진단과 코칭에 쓰여요.</p>
+  <form id="postForm" style="display:flex;flex-direction:column;gap:12px">
+    <div class="chips" role="radiogroup" aria-label="글 종류"><button type="button" class="chip" data-ptype="case" aria-pressed="${type==='case'}">해결 사례</button><button type="button" class="chip" data-ptype="question" aria-pressed="${type==='question'}">질문</button></div>
+    <input type="hidden" id="pf-type" value="${type}">
+    <label class="f">제목<input class="inp" id="pf-title" required maxlength="60" value="${esc(pre.title||'')}" placeholder="예: PLA 첫 층이 안 붙던 문제 해결"></label>
+    <div class="grid2"><label class="f">프린터<select class="inp" id="pf-printer">${PRINTERS.map(x=>`<option ${x===(pre.printer||'A1 mini')?'selected':''}>${x}</option>`).join('')}</select></label>
+    <label class="f">소재<select class="inp" id="pf-mat">${Object.keys(MAT).map(x=>`<option ${x===(pre.mat||'PLA')?'selected':''}>${x}</option>`).join('')}</select></label></div>
+    <label class="f">증상<select class="inp" id="pf-sym">${Object.entries(SYM).map(([k,s])=>`<option value="${k}" ${k===pre.sym?'selected':''}>${s.label}</option>`).join('')}</select></label>
+    <label class="f">무슨 일이 있었나요<textarea class="inp" id="pf-problem" required placeholder="보이는 그대로 적어 주세요. 부품 이름을 몰라도 괜찮아요.">${esc(pre.problem||'')}</textarea></label>
+    <label class="f" id="pf-sol-wrap" ${type==='question'?'hidden':''}>어떻게 해결했나요<textarea class="inp" id="pf-solution" placeholder="바꾼 설정값을 함께 적어 주세요.">${esc(pre.solution||'')}</textarea></label>
+    <p class="note" id="pf-err" role="alert" style="margin:0;color:var(--bad)" hidden></p>
+    <button class="btn primary block" type="submit">올리기</button>
+  </form>`, w=>{
+    w.querySelectorAll('[data-ptype]').forEach(b=>b.onclick=()=>{ w.querySelectorAll('[data-ptype]').forEach(x=>x.setAttribute('aria-pressed',x===b)); $('#pf-type').value=b.dataset.ptype; $('#pf-sol-wrap').hidden=b.dataset.ptype==='question'; });
+    $('#postForm').addEventListener('submit',e=>{ e.preventDefault();
+      const t=$('#pf-type').value, title=$('#pf-title').value.trim(), problem=$('#pf-problem').value.trim(), solution=$('#pf-solution').value.trim();
+      const err=$('#pf-err');
+      if(!title||!problem){ err.textContent='제목과 상황 설명을 입력해 주세요.'; err.hidden=false; return; }
+      if(t==='case'&&!solution){ err.textContent='해결 사례에는 해결 방법이 필요해요. 아직 해결 전이라면 질문으로 올려 주세요.'; err.hidden=false; return; }
+      const mat=$('#pf-mat').value, sym=$('#pf-sym').value;
+      const shapeFor={spaghetti:'lift',stringing:'towers',warping:'warp',adhesion:'lift',layershift:'shift',underext:'gaps',clog:'clog'};
+      const post={id:'u'+Date.now(),type:t,mine:true,title,author:'나',printer:$('#pf-printer').value,mat,sym,likes:0,solved:t==='case'?1:0,
+        fixes:(t==='case'&&sym===pre.sym)?(pre.fixes||[]):[],
+        shape:shapeFor[sym],color:t==='case'?'#3FAE63':'#4A86E8',bg:t==='case'?'#E4F2E6':'#E3ECF8',h:200,problem,solution:t==='case'?solution:'',settings:[]};
+      st.posts.unshift(post); st.feed='rec'; st.q=''; save(); closeSheet();
+      if(st.tab!=='community') go('community'); else render();
+      toast(t==='case'?'해결 사례를 공유했어요. 다음 코칭에 반영돼요':'질문을 올렸어요');
+    });
+  });
+}
+
+/* ---------- troubleshoot + AI coach ---------- */
+// Simulated feedback from other users: [tries, success rate] per cause, same order as SYM[sym].causes
+const FB_PRIOR = {
+  spaghetti:[[48,.71],[22,.55],[30,.60],[12,.42]],
+  underext:[[35,.52],[28,.61],[41,.74],[19,.68],[16,.50]],
+  clog:[[26,.66],[14,.79],[20,.45],[24,.58],[9,.44]],
+  adhesion:[[52,.63],[61,.77],[25,.48],[18,.40]],
+  warping:[[33,.70],[21,.52],[44,.73],[17,.41]],
+  stringing:[[57,.76],[39,.58],[34,.55],[15,.38]],
+  layershift:[[29,.72],[23,.61],[12,.50],[8,.35]]
+};
+const FB_SCORE = {solved:1, better:0.5, same:0, worse:0};
+const RATINGS = [['solved','해결됐어요'],['better','나아졌어요'],['same','그대로예요'],['worse','더 나빠졌어요']];
+const MY_WEIGHT = 8; // the user's own feedback counts more than the crowd prior for their printer/material
+let afterURL = null;
+const coachVersion = () => 'v1.' + st.coachLog.length;
+function fbRate(sym, mat, i){
+  const pr = (FB_PRIOR[sym]||[])[i] || [10,.5], L = st.learn[`${sym}|${mat}|${i}`] || {t:0,s:0};
+  return {rate:(pr[0]*pr[1] + MY_WEIGHT*L.s)/(pr[0] + MY_WEIGHT*L.t), n:pr[0]+L.t, mine:L.t};
+}
+function communityFor(sym, mat, i){
+  const cs = allPosts().filter(p=>p.type==='case' && p.sym===sym && (p.fixes||[]).includes(i));
+  const people = cs.reduce((a,p)=>a+solvedCount(p)*(p.mat===mat?1:0.5),0);
+  const best = cs.slice().sort((a,b)=>(b.mat===mat)-(a.mat===mat)||solvedCount(b)-solvedCount(a))[0];
+  return {cases:cs.length, people:Math.round(people), best};
+}
+function diagnose(){
+  const d = st.diag, s = SYM[d.sym];
+  const rows = s.causes.map((c,i)=>{ const ai=c.w+((c.mat&&c.mat[d.mat])||0); return {...c,i,ai,comm:communityFor(d.sym,d.mat,i),fb:fbRate(d.sym,d.mat,i)}; }).filter(c=>c.ai>0||c.comm.cases>0);
+  const maxAi = Math.max(1,...rows.map(c=>c.ai)), maxC = Math.max(1,...rows.map(c=>c.comm.people));
+  rows.forEach(c=>{ c.score = Math.round(100*(0.45*Math.max(0,c.ai)/maxAi + 0.25*c.comm.people/maxC + 0.30*c.fb.rate)); });
+  return rows.sort((a,b)=>b.score-a.score);
+}
+function resetFb(){ const d=st.diag; d.done={}; d.fbDone=false; d.rating=null; d.memo=''; d.update=null; if(afterURL){ URL.revokeObjectURL(afterURL); afterURL=null; } }
+function symImg(k, H){
+  const s = SYM[k];
+  return s.img ? `<img class="tph" src="${s.img}" alt="${esc(s.label)} 예시 사진" loading="lazy" style="aspect-ratio:200/${H}">`
+    : thumb({title:s.label, shape:s.shape, color:'#3FAE63', bg:'#E4F2E6'}, H, uid());
+}
+function viewFix(v){
+  const d = st.diag;
+  v.className='view';
+  v.innerHTML = `
+  <div class="titlebar"><h1>문제 해결</h1><p>부품 이름을 몰라도 괜찮아요. 사진을 올리고 비슷한 증상을 골라 주세요.</p></div>
+  <div class="pad split fixsplit">
+    <div class="main">
+    ${photoURL?`<div class="upl has"><img src="${photoURL}" alt="내가 올린 출력물 사진"><div class="uplbar"><span>${ic('check','sm')}내 사진을 올렸어요</span><span style="display:flex;gap:6px"><label class="chip" for="photoIn" style="cursor:pointer">다른 사진</label><button class="chip" id="photoClear">삭제</button></span></div></div>`
+      :`<label class="upl" for="photoIn"><span class="uplic">${ic('upload')}</span><b>이미지 업로드</b><span>출력물이나 프린터 사진을 올려 주세요</span></label>`}
+    <input id="photoIn" type="file" accept="image/*" hidden>
+    <p class="note" style="margin:-6px 0 0;text-align:center">사진은 이 기기에서만 보이고 서버로 전송되지 않아요</p>
+    <div class="card sec">
+      <div class="step"><b>1</b>어떤 증상과 비슷한가요</div>
+      <div class="symgrid">${Object.entries(SYM).map(([k,s])=>`<button class="sym" data-dsym="${k}" aria-pressed="${d.sym===k}"><span class="symimg">${symImg(k,150)}${s.img?'<span class="phtag">실제 사진</span>':''}</span><span class="symtx"><strong>${s.label}</strong><span>${s.hint}</span></span></button>`).join('')}</div>
+    </div>
+    <div class="card sec">
+      <div class="step"><b>2</b>장비와 소재</div>
+      <div class="chips" aria-label="프린터">${PRINTERS.map(x=>`<button class="chip" data-dprinter="${x}" aria-pressed="${d.printer===x}">${x}</button>`).join('')}</div>
+      <div class="divider"></div>
+      <div class="chips" aria-label="소재">${Object.keys(MAT).map(x=>`<button class="chip" data-dmat="${x}" aria-pressed="${d.mat===x}">${x}</button>`).join('')}</div>
+    </div>
+    <button class="btn primary block" id="runDiag" ${d.sym?'':'disabled'}>${ic('spark','sm')}${d.sym?'AI 진단 · 코칭 받기':'증상을 먼저 골라 주세요'}</button>
+    </div>
+    <div class="a1" id="diagOut"><div class="card diagph desk-only">${ic('spark')}<b>진단과 코칭이 여기에 나와요</b><span class="note">사진을 올리고 증상과 장비를 고른 뒤 AI 진단을 시작하세요</span></div></div>
+  </div>`;
+  if(d.ran && d.sym) drawDiag();
+}
+function feedbackHTML(d, applied){
+  const can = applied.length && d.rating;
+  return `<div class="card sec">
+    <div class="sechead"><h2>수정 결과 알려주기</h2><span class="note">코치 학습</span></div>
+    <p class="small muted" style="margin:0">코칭대로 고친 뒤 다시 출력해 보고 결과를 알려 주세요. 피드백은 코칭 AI의 추천 순서에 바로 반영돼요.</p>
+    <div class="step"><b>1</b>적용한 코칭 <span class="mono" style="color:var(--ink)">${applied.length}개</span></div>
+    ${applied.length?`<div class="chips">${applied.map(c=>`<span class="tag ok">${esc(c.t)}</span>`).join('')}</div>`:`<p class="note" style="margin:0">위 코칭에서 실제로 적용한 항목에 '적용했어요'를 눌러 주세요.</p>`}
+    <div class="step"><b>2</b>수정 후 사진 (선택)</div>
+    <label class="photo" for="afterIn">${afterURL?`<img src="${afterURL}" alt="수정 후 출력물 사진">`:`<span class="ph">${ic('camera')}</span>`}<span><b style="font-size:14px">${afterURL?'수정 후 사진을 올렸어요':'다시 출력한 결과 사진'}</b><br><span class="note">수정 전 사진과 나란히 비교해 보여드려요</span></span></label>
+    <input id="afterIn" type="file" accept="image/*" hidden>
+    <div class="step"><b>3</b>결과는 어땠나요?</div>
+    <div class="rates">${RATINGS.map(([k,l])=>`<button class="chip" data-rate="${k}" aria-pressed="${d.rating===k}">${l}</button>`).join('')}</div>
+    <label class="f">코치에게 한마디 (선택)<textarea class="inp" id="fbMemo" maxlength="200" placeholder="예: 온도를 내리니 실은 줄었는데 표면이 거칠어졌어요">${esc(d.memo||'')}</textarea></label>
+    <button class="btn primary block" id="fbSend" ${can?'':'disabled'}>${ic('spark','sm')}${can?'피드백 보내고 코치 업그레이드':applied.length?'결과를 골라 주세요':'적용한 코칭을 먼저 체크해 주세요'}</button>
+  </div>`;
+}
+function upgradeHTML(d){
+  const u = d.update, good = d.rating==='solved'||d.rating==='better', label = (RATINGS.find(r=>r[0]===d.rating)||['',''])[1];
+  return `<div class="card sec upg">
+    <div class="sechead"><h2>코칭 AI가 업그레이드됐어요</h2><span class="tag ok mono">${u.from} → ${u.to}</span></div>
+    <p class="small muted" style="margin:0">'${esc(label)}' 피드백을 ${esc(d.printer)} · ${esc(d.mat)} 코칭에 반영했어요.${d.memo?` 남긴 메모: "${esc(d.memo)}"`:''}</p>
+    ${afterURL?`<div class="compare"><figure>${photoURL?`<img class="tph" src="${photoURL}" alt="수정 전 사진" style="aspect-ratio:1">`:`<span class="nophoto">${ic('camera')}<span>사진 없음</span></span>`}<figcaption>수정 전</figcaption></figure><figure><img class="tph" src="${afterURL}" alt="수정 후 사진" style="aspect-ratio:1"><figcaption>수정 후</figcaption></figure></div>`:''}
+    <div class="chg">${u.changes.map(c=>`<div><span>${esc(c.t)}</span><span class="mono">성공률 ${c.before}% → <b class="${c.after>=c.before?'up':'down'}">${c.after}%</b></span><span class="note">${c.rb===c.ra?`코칭 순서 ${c.ra}번 유지`:`코칭 순서 ${c.rb}번 → ${c.ra}번`}</span></div>`).join('')}</div>
+    <div class="btnrow">${good?`<button class="btn primary" data-share="case">해결 사례로 공유</button><button class="btn ghost" id="diagNew">새 진단</button>`
+      :`<button class="btn primary" id="coachNext">업데이트된 코칭 받기</button><button class="btn ghost" data-share="question">커뮤니티에 질문</button>`}</div>
+  </div>`;
+}
+function drawDiag(){
+  const d = st.diag, causes = diagnose(), m = MAT[d.mat];
+  const applied = causes.filter(c=>d.done[c.i]);
+  const sims = allPosts().filter(p=>p.sym===d.sym && (p.type==='case')).sort((a,b)=>(b.mat===d.mat)-(a.mat===d.mat)||(b.printer===d.printer)-(a.printer===d.printer)||solvedCount(b)-solvedCount(a));
+  const lvl = c => c.ai>=4?['AI 가능성 높음','bad']:c.ai>=2?['AI 가능성 중간','warn']:['AI 함께 확인','info'];
+  const myFb = Object.values(st.learn).reduce((a,x)=>a+x.t,0);
+  $('#diagOut').innerHTML = `
+  <div>
+    <div class="card sec">
+      <div class="sechead"><h2>진단 결과</h2><span class="note">규칙 기반 시연</span></div>
+      <div class="compare"><figure>${photoURL?`<img class="tph" src="${photoURL}" alt="내 사진" style="aspect-ratio:1">`:`<span class="nophoto">${ic('camera')}<span>사진 없음</span></span>`}<figcaption>내 출력물</figcaption></figure><figure>${symImg(d.sym,200)}<figcaption>증상 예시</figcaption></figure></div>
+      <div class="chips"><span class="tag">${esc(d.printer)}</span><span class="tag">${esc(d.mat)}</span><span class="tag warn">${esc(SYM[d.sym].label)}</span></div>
+    </div>
+    <div class="card sec">
+      <div class="sechead"><h2 style="display:flex;align-items:center;gap:6px">${ic('spark','sm')}AI 코치</h2><span class="tag ok mono">${coachVersion()}</span></div>
+      <p class="small muted" style="margin:0">AI 진단, 커뮤니티 해결 사례, 사용자 피드백을 합쳐 이 순서로 고쳐 보길 추천해요.${myFb?` 내 피드백 ${myFb}건이 반영돼 있어요.`:''}</p>
+      <div class="srcs"><span><i style="background:var(--bad)"></i>AI 진단 45%</span><span><i style="background:var(--info)"></i>커뮤니티 사례 25%</span><span><i style="background:var(--warn)"></i>사용자 피드백 30%</span></div>
+      <ol class="steps">${causes.map((c,k)=>{ const L=lvl(c), b=c.comm.best, set = b&&b.settings&&b.settings.length ? b.settings.slice(0,3).map(x=>x.join(' ')).join(' · ') : '';
+        return `<li class="cstep ${d.done[c.i]?'done':''}">
+        <span class="cnum mono">${k+1}</span>
+        <div class="cbody">
+          <div class="t"><span>${esc(c.t)}</span><span class="score mono" title="추천도 (100점 만점)">${c.score}</span></div>
+          <p>${esc(c.fix)}</p>
+          ${set?`<button class="cref" data-open="${b.id}">${ic('community','sm')}<span>커뮤니티 설정 예 · ${esc(set)}</span></button>`:''}
+          <div class="evid"><span class="tag ${L[1]}">${L[0]}</span><span class="tag info">커뮤니티 ${c.comm.people}명 해결</span><span class="tag warn">피드백 성공률 ${Math.round(c.fb.rate*100)}% · ${c.fb.n}명</span>${c.fb.mine?`<span class="tag ok">내 피드백 ${c.fb.mine}회 반영</span>`:''}</div>
+          <button class="apply" data-cdone="${c.i}" role="checkbox" aria-checked="${!!d.done[c.i]}" ${d.fbDone?'disabled':''}><span class="cbox" aria-hidden="true">${ic('check')}</span>적용했어요</button>
+        </div></li>`; }).join('')}</ol>
+    </div>
+    ${d.fbDone && d.update ? upgradeHTML(d) : feedbackHTML(d, applied)}
+    <div class="card sec">
+      <div class="sechead"><h2>비슷한 장비의 해결 사례</h2><span class="note mono">${sims.length}건</span></div>
+      ${sims.length?`<div class="hscroll">${sims.map(p=>`<button class="mini" data-open="${p.id}">${thumb(p,120,uid())}<div>${esc(p.title)}<small>${esc(p.printer)} · ${esc(p.mat)} · ${solvedCount(p)}명 해결</small></div></button>`).join('')}</div>`:
+      `<p class="small muted" style="margin:0">아직 이 증상의 사례가 없어요. 해결하면 첫 사례를 남겨 주세요.</p>`}
+    </div>
+    <div class="card sec">
+      <h2>${esc(d.mat)} 권장 설정</h2>
+      <div class="matgrid"><div><small>노즐</small><b>${m.nozzle}℃</b></div><div><small>베드</small><b>${m.bed}℃</b></div><div><small>냉각 팬</small><b>${m.fan}</b></div><div><small>건조</small><b>${m.dry}</b></div></div>
+    </div>
+  </div>`;
+}
+
+/* ---------- cost ---------- */
+const COST_FIELDS = [
+  ['g','필라멘트 사용량','g'],['h','출력 시간','h'],['qty','수량','개'],['kg','필라멘트 단가','원/kg'],
+  ['w','소비 전력','W'],['kwh','전기 요금','원/kWh'],['dev','장비 가격','원'],['life','장비 수명','h'],
+  ['min','후가공 시간','분'],['wage','시급','원'],['fail','실패율','%'],['margin','마진율','%']];
+const SEG = [['mat','재료','#22A559'],['pow','전기','#E4B33B'],['dep','장비 감가','#4A86E8'],['lab','후가공 인건비','#E8833A'],['fail','실패 보정','#D9534F']];
+function calc(){
+  const c = st.cost, n = k => Math.max(0, Number(c[k])||0);
+  const mat = n('g')/1000*n('kg'), pow = n('w')/1000*n('h')*n('kwh'), dep = n('life')?n('dev')/n('life')*n('h'):0, lab = n('min')/60*n('wage');
+  const sub = mat+pow+dep+lab, fail = sub*n('fail')/100, cost = sub+fail, unit = Math.ceil(cost*(1+n('margin')/100)/100)*100;
+  const qty = Math.max(1, Math.round(n('qty')));
+  return {mat,pow,dep,lab,fail,cost,unit,qty,total:unit*qty,profit:(unit-cost)*qty};
+}
+function viewCost(v){
+  const c = st.cost;
+  v.className='view';
+  v.innerHTML = `
+  <div class="titlebar"><h1>원가 계산</h1><p>출력 1건의 원가와 견적가를 바로 계산해요.</p></div>
+  <div class="pad split costin">
+    <div class="a1"><div class="quote" aria-live="polite">
+      <div><div class="lbl">견적가 (총액)</div><div class="big" id="qTotal"></div></div>
+      <div class="row"><span>개당 견적가</span><span id="qUnit"></span></div>
+      <div class="row"><span>개당 원가</span><span id="qCost"></span></div>
+      <div class="row"><span>예상 이익</span><span id="qProfit"></span></div>
+      <div class="stack" id="qStack"></div>
+      <div class="legend" id="qLegend"></div>
+    </div></div>
+    <div class="main"><div class="card sec">
+      <h2>소재</h2>
+      <div class="chips">${Object.keys(MAT).map(x=>`<button class="chip" data-cmat="${x}" aria-pressed="${c.mat===x}">${x}</button>`).join('')}</div>
+    </div>
+    ${[['출력물',['g','h','qty','kg']],['장비',['w','kwh','dev','life']],['작업·조정',['min','wage','fail','margin']]].map(([t,ks])=>`
+    <div class="card sec"><h2>${t}</h2><div class="grid2">${ks.map(k=>{ const f=COST_FIELDS.find(x=>x[0]===k); return `<label class="f">${f[1]}<span class="unit"><input class="inp" type="number" inputmode="decimal" min="0" step="any" id="c-${k}" data-cost="${k}" value="${c[k]}"><span>${f[2]}</span></span></label>`; }).join('')}</div></div>`).join('')}</div>
+    <div class="a2"><div class="card sec">
+      <h2>견적 저장</h2>
+      <div style="display:flex;gap:8px"><input class="inp" id="qName" placeholder="견적 이름 (예: 브래킷 200개)" maxlength="40"><button class="btn primary" id="qSave" style="height:44px">저장</button></div>
+      <button class="btn ghost block" id="qCopy">${ic('copy','sm')}견적 내용 복사</button>
+      <div id="qList"></div>
+    </div></div>
+  </div>`;
+  updateCost(); drawQuotes();
+}
+function updateCost(){
+  const r = calc(), parts = SEG.map(([k,l,col])=>[l,col,r[k]]), sum = parts.reduce((a,p)=>a+p[2],0)||1;
+  $('#qTotal').textContent = won(r.total);
+  $('#qUnit').textContent = won(r.unit)+' × '+r.qty;
+  $('#qCost').textContent = won(r.cost);
+  $('#qProfit').textContent = won(r.profit);
+  $('#qStack').innerHTML = parts.filter(p=>p[2]>0).map(p=>`<i style="width:${p[2]/sum*100}%;background:${p[1]}"></i>`).join('');
+  $('#qLegend').innerHTML = parts.map(p=>`<div><span><em style="background:${p[1]}"></em>${p[0]}</span><span class="mono">${won(p[2])}</span></div>`).join('');
+}
+function quoteText(name){
+  const c = st.cost, r = calc();
+  return `[PrintMate 견적] ${name||'출력 견적'}\n소재 ${c.mat} · ${c.g}g · ${c.h}시간 · ${r.qty}개\n개당 원가 ${won(r.cost)} (재료 ${won(r.mat)}, 전기 ${won(r.pow)}, 장비 ${won(r.dep)}, 후가공 ${won(r.lab)}, 실패 보정 ${won(r.fail)})\n개당 견적가 ${won(r.unit)} · 총액 ${won(r.total)}`;
+}
+function drawQuotes(){
+  const el = $('#qList'); if(!el) return;
+  el.innerHTML = st.quotes.length ? st.quotes.map((q,i)=>`<div class="saved"><div><b style="font-size:14px">${esc(q.name)}</b><div class="note">${esc(q.mat)} · ${q.qty}개 · ${esc(q.date)}</div></div><div style="display:flex;align-items:center;gap:8px"><span class="mono">${won(q.total)}</span><button class="x" data-qdel="${i}" aria-label="${esc(q.name)} 삭제">${ic('trash','sm')}</button></div></div>`).join('')
+    : `<p class="note" style="margin:0">저장한 견적이 여기에 쌓여요.</p>`;
+}
+
+/* ---------- prep ---------- */
+function checklist(mat){
+  const m = MAT[mat];
+  const base = [['bed','베드를 IPA로 닦았어요','손자국과 유분이 첫 층 접착을 망쳐요'],['dry',`필라멘트 건조 상태를 확인했어요`,`${mat} 권장 건조: ${m.dry}`],
+    ['profile',`슬라이서 프로파일이 ${mat}로 되어 있어요`,`노즐 ${m.nozzle}℃ · 베드 ${m.bed}℃`],['level','자동 레벨링을 켰어요','판을 바꿨다면 꼭 다시 실행하세요'],
+    ['nozzle','노즐 끝 잔여물을 제거했어요','예열 상태에서 황동 브러시로 닦아요'],['support','서포트·브림 필요 여부를 확인했어요','오버행 45° 이상이면 서포트']];
+  const extra = {ABS:[['enc','문과 덮개를 닫고 챔버를 예열했어요','10분 예열 · 환기는 외부로']],ASA:[['enc','문과 덮개를 닫고 챔버를 예열했어요','10분 예열 · 환기는 외부로']],
+    PLA:[['open','밀폐형이라면 상단 덮개를 열었어요','열 적체로 막히는 것을 막아요']],PETG:[['glue','텍스처 판이면 이형제(풀)를 얇게 발랐어요','PETG가 판을 뜯어낼 수 있어요']],
+    TPU:[['ext','외부 스풀로 직결하고 리트랙션을 껐어요','속도 25mm/s 이하']]};
+  return base.concat(extra[mat]||[]);
+}
+function viewPrep(v){
+  const mat = st.prepMat, m = MAT[mat], list = checklist(mat), ck = st.checks[mat]||{}, doneN = list.filter(x=>ck[x[0]]).length;
+  const pr = st.printers.find(p=>p.id===st.activePrinter) || st.printers[0];
+  v.className='view';
+  v.innerHTML = `
+  <div class="device pad">
+    <div><label class="sr" style="position:absolute;left:-9999px" for="prSel">프린터 선택</label>
+      <select id="prSel">${st.printers.map(p=>`<option value="${p.id}" ${p.id===pr.id?'selected':''}>${esc(p.name)} ▾</option>`).join('')}</select>
+      <div class="small muted" style="display:flex;align-items:center;gap:6px"><span class="dot"></span>온라인 · ${esc(pr.model)} <span class="note">(연결 시연)</span></div></div>
+  </div>
+  <div class="pad split">
+    <div class="main"><div class="card job">
+      <div class="gc"><svg viewBox="0 0 48 48" width="44" height="44" fill="none" stroke="var(--faint)" stroke-width="1.6"><path d="M8 34h32M12 28h24M16 22h16M20 16h8"/></svg></div>
+      <div style="min-width:0"><div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">0901_케이블클립_plate_2.3mf</div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="pct">100<span style="font-size:14px">%</span></span><span style="color:var(--accent-text);font-weight:600">성공</span></div>
+        <div class="prog"><i style="width:100%"></i></div><div class="note mono" style="margin-top:4px">레이어 42/42</div></div>
+    </div>
+    <div class="temps"><div class="temp"><small>노즐</small><b>25<span>/0℃</span></b></div><div class="temp"><small>베드</small><b>24<span>/0℃</span></b></div><div class="temp"><small>챔버</small><b>23<span>℃</span></b></div></div>
+    <div class="card sec">
+      <div class="sechead"><h2>출력 전 체크리스트</h2><span class="small mono">${doneN}/${list.length}</span></div>
+      <div class="prog"><i style="width:${doneN/list.length*100}%"></i></div>
+      <div>${list.map(([k,t,s])=>`<button class="check ${ck[k]?'done':''}" data-pcheck="${k}"><span class="cbox" role="checkbox" aria-checked="${!!ck[k]}">${ic('check')}</span><span>${esc(t)}<small>${esc(s)}</small></span></button>`).join('')}</div>
+      <div class="btnrow"><button class="btn ghost" id="pReset">초기화</button><button class="btn primary" id="pGo" ${doneN===list.length?'':'disabled'}>출력 준비 완료</button></div>
+    </div></div>
+    <div class="a1"><div class="card sec">
+      <h2>소재 가이드</h2>
+      <div class="chips">${Object.keys(MAT).map(x=>`<button class="chip" data-pmat="${x}" aria-pressed="${mat===x}">${x}</button>`).join('')}</div>
+      <div class="matgrid"><div><small>노즐</small><b>${m.nozzle}℃</b></div><div><small>베드</small><b>${m.bed}℃</b></div><div><small>냉각 팬</small><b>${m.fan}</b></div><div><small>인클로저</small><b style="font-family:var(--sans)">${m.enc}</b></div></div>
+      <p class="small muted" style="margin:0">${m.note}</p>
+    </div></div>
+  </div>`;
+}
+
+/* ---------- me ---------- */
+function viewMe(v){
+  const savedList = allPosts().filter(p=>st.saved[p.id]);
+  const contrib = st.posts.filter(p=>p.type==='case').length + Object.keys(st.solved).filter(k=>st.solved[k]).length;
+  v.className='view';
+  v.innerHTML = `
+  <div class="profile pad"><div class="bigav">S<i>LV 14</i></div><div style="min-width:0"><h2>메이커 스튜디오</h2><p>@maker_studio · 소규모 출력 외주</p><p class="mono">${st.printers.length} 프린터 · ${st.posts.length} 게시물</p></div></div>
+  <div class="pad mecols">
+    <div class="card quick full">
+      <div><b>${st.printed}</b><small>출력 기록</small></div>
+      <div><b>${savedList.length}</b><small>저장한 글</small></div>
+      <div><b>${contrib}</b><small>해결 기여</small></div>
+      <div><b>${st.quotes.length}</b><small>저장 견적</small></div>
+    </div>
+    <div class="card sec">
+      <div class="sechead"><h2>저장한 글</h2><button class="more" data-gofeed="saved">전체 ${ic('chev','sm')}</button></div>
+      ${savedList.length?`<div class="thumbs">${savedList.map(p=>`<button data-open="${p.id}" aria-label="${esc(p.title)}">${thumb(p,200,uid())}</button>`).join('')}</div>`:`<p class="note" style="margin:0">커뮤니티에서 저장한 글이 여기에 모여요.</p>`}
+    </div>
+    <div class="card sec">
+      <div class="sechead"><h2>내 프린터</h2></div>
+      <div>${st.printers.map(p=>`<div class="prow"><span class="pi">${ic('printer')}</span><div><b style="font-size:14.5px">${esc(p.name)}</b><small>${esc(p.model)}</small></div>${p.id===st.activePrinter?'<span class="tag ok">사용 중</span>':`<button class="chip" data-use="${p.id}">사용</button>`}</div>`).join('')}</div>
+      <form id="addPr" style="display:flex;gap:8px"><input class="inp" id="prName" placeholder="이름" maxlength="20" required><select class="inp" id="prModel" style="max-width:110px">${PRINTERS.map(x=>`<option>${x}</option>`).join('')}</select><button class="btn primary" style="height:44px;padding:0 14px" aria-label="프린터 추가">${ic('plus','sm')}</button></form>
+    </div>
+        <div class="card sec">
+      <div class="sechead"><h2>코칭 기록</h2><span class="tag ok mono">AI 코치 ${coachVersion()}</span></div>
+      ${st.coachLog.length?`<div>${st.coachLog.slice(0,6).map(l=>`<div class="saved"><div><b style="font-size:14px">${esc(SYM[l.sym].label)}</b><div class="note">${esc(l.printer)} · ${esc(l.mat)} · ${esc(l.date)} · 적용 ${l.applied.length}개 · ${esc(l.ver||'')}</div></div><span class="tag ${l.rating==='solved'?'ok':l.rating==='better'?'info':l.rating==='same'?'warn':'bad'}">${(RATINGS.find(r=>r[0]===l.rating)||['',''])[1]}</span></div>`).join('')}</div>`
+        :`<p class="note" style="margin:0">문제해결에서 코칭을 받고 수정 결과를 알려 주면 여기에 쌓이고, 그만큼 코칭 AI가 업그레이드돼요.</p>`}
+    </div>
+    <div class="card sec">
+      <h2>데이터</h2>
+      <p class="note" style="margin:0">입력한 기록과 코칭 학습 내용은 이 브라우저에만 저장돼요. 커뮤니티 글, 장비 연결, AI 진단, 다른 사용자 피드백 수치는 시연용 예시예요.</p>
+      <div id="resetBox"><button class="btn ghost block" id="resetAsk">내 기록 초기화</button></div>
+    </div>
+  </div>`;
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', e=>{
+  const t = e.target.closest('button,[data-like],[data-open]'); if(!t) return;
+  const ds = t.dataset;
+  if(ds.tab){ go(ds.tab); return; }
+  if(ds.like){ e.stopPropagation(); st.liked[ds.like]=!st.liked[ds.like]; save();
+    document.querySelectorAll(`[data-like="${ds.like}"]`).forEach(b=>{ b.setAttribute('aria-pressed',!!st.liked[ds.like]); const n=b.querySelector('.mono'); if(n) n.textContent=likeCount(byId(ds.like)); }); return; }
+  if(ds.open){ openPost(ds.open); return; }
+  if(ds.shareNew!==undefined){ openPostForm(); return; }
+  if(t.id==='photoClear'){ if(photoURL) URL.revokeObjectURL(photoURL); photoURL=null; viewFix($('#view')); return; }
+  if(ds.close!==undefined){ closeSheet(); return; }
+  if(ds.feed){ st.feed=ds.feed; save(); viewCommunity($('#view')); return; }
+  if(ds.act==='bell'){ toast('새 답변 3개: 내 질문에 답이 달렸어요'); return; }
+  if(ds.save){ st.saved[ds.save]=!st.saved[ds.save]; save(); t.setAttribute('aria-pressed',!!st.saved[ds.save]); t.textContent=st.saved[ds.save]?'저장됨':'저장'; toast(st.saved[ds.save]?'저장했어요':'저장을 취소했어요'); refreshBehind(); return; }
+  if(ds.solve){ st.solved[ds.solve]=!st.solved[ds.solve]; save(); t.setAttribute('aria-pressed',!!st.solved[ds.solve]); t.textContent=st.solved[ds.solve]?'해결 확인함':'나도 해결됐어요';
+    $('#solvedN').textContent=solvedCount(byId(ds.solve))+'명'; if(st.solved[ds.solve]) toast('해결 확인을 남겼어요. 다음 추천에 반영돼요'); refreshBehind(); return; }
+  if(ds.toprep){ st.prepMat=ds.toprep; go('prep'); toast(ds.toprep+' 출력 체크리스트를 열었어요'); return; }
+  if(ds.tocost){ const p=byId(ds.tocost); Object.assign(st.cost,{mat:p.mat,kg:MAT[p.mat].price,qty:p.qty,g:p.grams,h:p.hours,min:p.qty>=50?3:30}); go('cost'); toast('요청 내용으로 견적을 채웠어요'); return; }
+  if(ds.dprinter){ st.diag.printer=ds.dprinter; st.diag.ran=false; resetFb(); save(); viewFix($('#view')); return; }
+  if(ds.dmat){ st.diag.mat=ds.dmat; st.diag.ran=false; resetFb(); save(); viewFix($('#view')); return; }
+  if(ds.dsym){ st.diag.sym=ds.dsym; st.diag.ran=false; resetFb(); save(); viewFix($('#view')); return; }
+  if(t.id==='runDiag'){ st.diag.ran=true; save(); t.innerHTML=ic('spark','sm')+'증상과 사례를 비교하는 중…'; t.disabled=true;
+    setTimeout(()=>{ viewFix($('#view')); const o=$('#diagOut'); if(o) o.scrollIntoView({behavior:'smooth',block:'start'}); }, 600); return; }
+  if(ds.cdone!==undefined){ if(st.diag.fbDone) return; st.diag.done[ds.cdone]=!st.diag.done[ds.cdone]; save(); drawDiag(); return; }
+  if(ds.rate){ st.diag.rating=ds.rate; save(); drawDiag(); return; }
+  if(t.id==='fbSend'){ const d=st.diag, before=diagnose(), applied=before.filter(c=>d.done[c.i]); if(!applied.length||!d.rating) return;
+    const rb={}, br={}; before.forEach((c,k)=>{ rb[c.i]=k+1; br[c.i]=Math.round(c.fb.rate*100); });
+    const from = coachVersion();
+    applied.forEach(c=>{ const k=`${d.sym}|${d.mat}|${c.i}`, L=st.learn[k]||{t:0,s:0}; L.t++; L.s+=FB_SCORE[d.rating]; st.learn[k]=L; });
+    st.coachLog.unshift({date:new Date().toLocaleDateString('ko-KR',{month:'short',day:'numeric'}),sym:d.sym,mat:d.mat,printer:d.printer,rating:d.rating,applied:applied.map(c=>c.t),memo:d.memo||''});
+    const to = coachVersion(); st.coachLog[0].ver = to;
+    const after = diagnose(), ra={}; after.forEach((c,k)=>ra[c.i]=k+1);
+    d.update = {from,to,changes:applied.map(c=>{ const a=after.find(x=>x.i===c.i); return {t:c.t,before:br[c.i],after:Math.round(a.fb.rate*100),rb:rb[c.i],ra:ra[c.i]}; })};
+    d.fbDone = true; save(); drawDiag(); toast(`코칭 AI를 ${to}로 업그레이드했어요`); return; }
+  if(t.id==='coachNext'){ const d=st.diag; d.done={}; d.fbDone=false; d.rating=null; d.memo=''; d.update=null; if(afterURL){ URL.revokeObjectURL(afterURL); afterURL=null; } save(); drawDiag(); toast('피드백을 반영한 새 코칭 순서예요'); return; }
+  if(t.id==='diagNew'){ resetFb(); st.diag.ran=false; st.diag.sym=null; if(photoURL){ URL.revokeObjectURL(photoURL); photoURL=null; } save(); viewFix($('#view')); $('#scroll').scrollTop=0; return; }
+  if(ds.share){ const d=st.diag; openPostForm({type:ds.share,printer:d.printer,mat:d.mat,sym:d.sym,
+    title: ds.share==='case'?`${d.mat} ${SYM[d.sym].label.replace(/요$/,'던 문제')} 해결`:`${d.printer}에서 ${d.mat} ${SYM[d.sym].label.replace(/어요$|아요$|요$/,'')}는 문제`,
+    solution: ds.share==='case'?diagnose().filter(c=>d.done[c.i]).map(c=>c.fix).join(' '):'', fixes: diagnose().filter(c=>d.done[c.i]).map(c=>c.i)}); return; }
+  if(ds.cmat){ st.cost.mat=ds.cmat; st.cost.kg=MAT[ds.cmat].price; save(); viewCost($('#view')); return; }
+  if(t.id==='qSave'){ const name=$('#qName').value.trim()||`${st.cost.mat} 출력 견적`; const r=calc();
+    st.quotes.unshift({name,mat:st.cost.mat,qty:r.qty,total:r.total,date:new Date().toLocaleDateString('ko-KR',{month:'short',day:'numeric'})}); save(); $('#qName').value=''; drawQuotes(); toast('견적을 저장했어요'); return; }
+  if(t.id==='qCopy'){ const txt=quoteText($('#qName').value.trim());
+    const fallback=()=>{ openSheet(`<div class="sheethead"><h2>견적 내용</h2><button class="x" data-close aria-label="닫기">${ic('x','sm')}</button></div><textarea class="inp" id="qTxt" rows="6" readonly>${esc(txt)}</textarea><p class="note" style="margin:0">복사가 막혀 있어요. 텍스트를 선택해 직접 복사해 주세요.</p>`, w=>{ const a=w.querySelector('#qTxt'); a.focus(); a.select(); }); };
+    try{ navigator.clipboard.writeText(txt).then(()=>toast('견적 내용을 복사했어요'),fallback); }catch(err){ fallback(); } return; }
+  if(ds.qdel!==undefined){ st.quotes.splice(+ds.qdel,1); save(); drawQuotes(); toast('견적을 삭제했어요'); return; }
+  if(ds.pmat){ st.prepMat=ds.pmat; save(); viewPrep($('#view')); return; }
+  if(ds.pcheck){ const m=st.prepMat; st.checks[m]=st.checks[m]||{}; st.checks[m][ds.pcheck]=!st.checks[m][ds.pcheck]; save(); const y=$('#scroll').scrollTop; viewPrep($('#view')); $('#scroll').scrollTop=y; return; }
+  if(t.id==='pReset'){ st.checks[st.prepMat]={}; save(); viewPrep($('#view')); return; }
+  if(t.id==='pGo'){ st.printed++; st.checks[st.prepMat]={}; save(); viewPrep($('#view')); toast('준비 완료. 출력 기록에 남겼어요'); return; }
+  if(ds.use){ st.activePrinter=ds.use; save(); viewMe($('#view')); toast('사용 중인 프린터를 바꿨어요'); return; }
+  if(ds.gofeed){ st.feed=ds.gofeed; go('community'); return; }
+  if(t.id==='resetAsk'){ $('#resetBox').innerHTML=`<p class="small" style="margin:0 0 8px">저장, 좋아요, 견적, 내 글이 모두 지워져요.</p><div class="btnrow"><button class="btn ghost" id="resetNo">취소</button><button class="btn primary" id="resetYes" style="background:var(--bad);color:#fff">초기화</button></div>`; return; }
+  if(t.id==='resetNo'){ viewMe($('#view')); return; }
+  if(t.id==='resetYes'){ try{ localStorage.removeItem(KEY); }catch(err){} st=load(); photoURL=null; go('me'); toast('기록을 초기화했어요'); return; }
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') closeSheet();
+  if((e.key==='Enter'||e.key===' ') && e.target.matches('[data-like][role="button"]')){ e.preventDefault(); e.target.click(); }
+});
+document.addEventListener('input', e=>{
+  const t=e.target;
+  if(t.id==='q'){ st.q=t.value; save(); drawFeed(); }
+  if(t.id==='fbMemo'){ st.diag.memo=t.value; save(); }
+  if(t.dataset.cost){ st.cost[t.dataset.cost]=t.value; save(); updateCost(); }
+});
+document.addEventListener('change', e=>{
+  const t=e.target;
+  if(t.id==='afterIn' && t.files[0]){ if(afterURL) URL.revokeObjectURL(afterURL); afterURL=URL.createObjectURL(t.files[0]); drawDiag(); }
+  if(t.id==='photoIn' && t.files[0]){ if(photoURL) URL.revokeObjectURL(photoURL); photoURL=URL.createObjectURL(t.files[0]); viewFix($('#view')); }
+  if(t.id==='prSel'){ st.activePrinter=t.value; save(); viewPrep($('#view')); }
+});
+document.addEventListener('submit', e=>{
+  if(e.target.id==='addPr'){ e.preventDefault(); const name=$('#prName').value.trim(); if(!name) return;
+    st.printers.push({id:'p'+Date.now(),name,model:$('#prModel').value}); save(); viewMe($('#view')); toast('프린터를 추가했어요'); }
+});
+function refreshBehind(){ if(st.tab==='community'){ const y=$('#scroll').scrollTop; drawFeed(); $('#scroll').scrollTop=y; } else if(st.tab==='me'){ const s=$('#sheet'); const keep=s&&s.parentNode; if(keep) s.remove(); viewMe($('#view')); if(keep) $('#frame').appendChild(s); } else if(st.tab==='fix'&&st.diag.ran){ drawDiag(); } }
+
+let rsz; addEventListener('resize',()=>{ clearTimeout(rsz); rsz=setTimeout(()=>{ if(st.tab==='community') drawFeed(); },150); });
+
+/* ---------- boot ---------- */
+const h = location.hash.slice(1); st.tab = (TABS.some(x=>x[0]===h) || h==='me') ? h : 'home';
+renderNav(); render();
+})();
+</script>

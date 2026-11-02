@@ -1,0 +1,7 @@
+# 앱 파일만 올리고 나머지(PDF, 키노트, 엑셀, 발표 자료)는 제외
+/*
+!/.gitignore
+!/README.md
+!/printmate-app.html
+!/printmate-assets/
+!/DESIGN-discord.md
