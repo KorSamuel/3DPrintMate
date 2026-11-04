@@ -8,4 +8,4 @@
 
 ## 디자인
 
-화면 스타일은 [DESIGN-discord.md](DESIGN-discord.md)(Discord 디자인 분석, [getdesign.md](https://getdesign.md/) 제공)를 기준으로 적용했습니다.
+화면 스타일은 [DESIGN-nintendo-2001.md](DESIGN-nintendo-2001.md)(2001년 Nintendo.com 디자인 분석, [getdesign.md](https://getdesign.md/) 제공)를 기준으로 적용했습니다. 이전 버전은 [DESIGN-discord.md](DESIGN-discord.md)를 썼습니다.
