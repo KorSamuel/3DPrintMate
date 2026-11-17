@@ -940,11 +940,15 @@ function fbRate(sym, mat, i){
   const pr = (FB_PRIOR[sym]||[])[i] || [10,.5], L = st.learn[`${sym}|${mat}|${i}`] || {t:0,s:0};
   return {rate:(pr[0]*pr[1] + MY_WEIGHT*L.s)/(pr[0] + MY_WEIGHT*L.t), n:pr[0]+L.t, mine:L.t};
 }
+// a case lists its fixes in the order they mattered: the first is the main fix, later ones get less credit
+const FIX_CREDIT = [1, .6, .4, .3];
 function communityFor(sym, mat, i){
   const cs = allPosts().filter(p=>p.type==='case' && p.sym===sym && (p.fixes||[]).includes(i));
   const people = cs.reduce((a,p)=>a+solvedCount(p)*(p.mat===mat?1:0.5),0);
+  const weight = cs.reduce((a,p)=>a+solvedCount(p)*(p.mat===mat?1:0.5)*(FIX_CREDIT[p.fixes.indexOf(i)]||.3),0);
+  const primary = cs.filter(p=>p.fixes[0]===i).length;
   const best = cs.slice().sort((a,b)=>(b.mat===mat)-(a.mat===mat)||solvedCount(b)-solvedCount(a))[0];
-  return {cases:cs.length, people:Math.round(people), best};
+  return {cases:cs.length, people:Math.round(people), weight, primary, best};
 }
 /* explainability (week 10): signals, weights and the reasons shown on each cause */
 const SHORT = {spaghetti:'실 뭉치',underext:'윗면·벽 틈',clog:'압출 멈춤',adhesion:'첫 층 안 붙음',warping:'모서리 들뜸',stringing:'거미줄',layershift:'층 밀림'};
@@ -972,30 +976,34 @@ function diagnose(){
   const d = st.diag, s = SYM[d.sym], phase = myFbCount() ? 'fb' : 'init', W = PHASES[phase], ans = askAnswer(d), boost = ans ? ans[1] : {};
   const rows = s.causes.map((c,i)=>{ const mat=(c.mat&&c.mat[d.mat])||0, b=boost[i]||0;
     return {...c,i,matAdj:mat,boost:b,ai:c.w+mat+b,comm:communityFor(d.sym,d.mat,i),fb:fbRate(d.sym,d.mat,i),meta:metaOf(d.sym,i)}; }).filter(c=>c.ai>0||c.comm.cases>0);
-  const maxW = Math.max(1,...rows.map(c=>c.w)), maxAi = Math.max(1,...rows.map(c=>c.ai)), maxC = Math.max(1,...rows.map(c=>c.comm.people));
-  rows.forEach(c=>{ c.sig = {guide:Math.max(0,c.w)/maxW, ai:Math.max(0,c.ai)/maxAi, comm:c.comm.people/maxC, fb:c.fb.rate};
+  const maxW = Math.max(1,...rows.map(c=>c.w)), maxAi = Math.max(1,...rows.map(c=>c.ai)), maxC = Math.max(1,...rows.map(c=>c.comm.weight));
+  rows.forEach(c=>{ c.sig = {guide:Math.max(0,c.w)/maxW, ai:Math.max(0,c.ai)/maxAi, comm:c.comm.weight/maxC, fb:c.fb.rate};
     c.pts = {}; SIG.forEach(([k])=>c.pts[k]=100*W[k]*c.sig[k]); c.score = Math.round(SIG.reduce((a,[k])=>a+c.pts[k],0)); });
-  rows.sort((a,b)=>b.score-a.score); rows.phase = phase; rows.W = W;
+  // equal evidence: show first the cause other users fixed more often (then the quicker check), and keep shown scores distinct
+  rows.sort((a,b)=>b.score-a.score || b.fb.rate-a.fb.rate || a.meta.min-b.meta.min);
+  for(let k=1;k<rows.length;k++) if(rows[k].score>=rows[k-1].score){ rows[k].tieWith = rows[k-1]; rows[k].tieAdj = rows[k-1].score-1-rows[k].score; rows[k].score = rows[k-1].score-1; }
+  rows.phase = phase; rows.W = W;
   return rows;
 }
 const WHY = {
   guide:c=>c.sig.guide>=1 ? '제조사 가이드라인에서 이 증상의 대표 원인으로 꼽혀요' : '제조사 가이드라인에서도 가능한 원인으로 다뤄요',
   ai:(c,d)=>c.boost>0 ? `‘${askAnswer(d)[0]}’라고 답하셔서 가능성이 올라갔어요` : c.matAdj>0 ? `${d.mat}에서 특히 자주 생기는 원인이에요` : '고른 증상과 잘 맞는 원인이에요',
-  comm:c=>`같은 증상을 이 방법으로 고친 사용자가 ${c.comm.people}명 있어요`,
+  comm:c=>c.comm.primary ? `같은 증상 해결 사례에서 주된 해결법으로 꼽혔어요 (${c.comm.people}명 해결)` : `같은 증상 해결 사례에서 함께 쓴 조치예요 (${c.comm.people}명 해결)`,
   fb:c=>`피드백 ${c.fb.n}명 중 ${Math.round(c.fb.rate*100)}%가 이 방법으로 해결했어요`};
-const WHYNOT = {guide:'가이드라인상 덜 흔한 원인이에요', ai:'고른 조건과 덜 맞아요', comm:'이 방법으로 고친 사례가 더 적어요', fb:'피드백 성공률이 더 낮아요'};
+const WHYNOT = {guide:'가이드라인상 덜 흔한 원인이에요', ai:'고른 조건과 덜 맞아요', comm:'해결 사례에서 주된 해결법으로 꼽힌 경우가 더 적어요', fb:'피드백 성공률이 더 낮아요'};
 function reasonHTML(c, top, rank, d){
   // strongest signal for this cause; on ties prefer the more specific evidence (feedback > community > AI > guideline)
   const W = PHASES[myFbCount()?'fb':'init'], keys = SIG.map(x=>x[0]), pref = ['fb','comm','ai','guide'];
   const best = keys.filter(k=>W[k]>0 && (k==='guide'||c.sig[k]>0)).sort((a,b)=>(c.sig[b]-c.sig[a])||(pref.indexOf(a)-pref.indexOf(b)))[0];
   if(rank===0) return `<p class="reason"><b>1순위인 이유</b> · ${esc(WHY[best](c,d))}</p>`;
+  if(c.tieWith) return `<p class="reason not"><b>${rank+1}순위인 이유</b> · ${esc(WHY[best](c,d))}. 바로 위 원인과 근거 점수가 같지만, 다른 사용자 피드백 성공률이 위 원인 ${Math.round(c.tieWith.fb.rate*100)}%, 이 원인 ${Math.round(c.fb.rate*100)}%라서 한 칸 아래에 뒀어요</p>`;
   const gap = keys.slice().sort((a,b)=>(top.pts[b]-c.pts[b])-(top.pts[a]-c.pts[a]))[0];
   return `<p class="reason not"><b>${rank+1}순위인 이유</b> · ${esc(WHY[best](c,d))}. ${top.score-c.score>0?`1순위보다 낮은 건 ${WHYNOT[gap]}`:'1순위와 근거가 비슷해요'}</p>`;
 }
 function evidenceHTML(c, d, W){
   const g = guideOf(d.printer), ans = askAnswer(d), b = c.comm.best;
   return `<details class="why"><summary>근거 자세히 보기</summary>
-    <div class="sigs">${SIG.filter(([k])=>W[k]>0).map(([k,l,col])=>`<div class="sig"><span>${l} <em>${Math.round(W[k]*100)}%</em></span><span class="bar"><i style="width:${Math.round(c.sig[k]*100)}%;background:${col}"></i></span><b class="mono">${Math.round(c.pts[k])}점</b></div>`).join('')}</div>
+    <div class="sigs">${SIG.filter(([k])=>W[k]>0).map(([k,l,col])=>`<div class="sig"><span>${l} <em>${Math.round(W[k]*100)}%</em></span><span class="bar"><i style="width:${Math.round(c.sig[k]*100)}%;background:${col}"></i></span><b class="mono">${Math.round(c.pts[k])}점</b></div>`).join('')}${c.tieAdj?`<div class="sig"><span>동점 순서 조정</span><span></span><b class="mono">${c.tieAdj}점</b></div>`:''}</div>
     <ul class="srclist">
       <li>제조사 가이드: <a href="${g[1]}" target="_blank" rel="noopener">${g[0]}</a>의 ‘${esc(SYM[d.sym].label)}’ 대처법 기준</li>
       <li>AI 판단에 쓴 조건: ${esc(d.printer)} · ${esc(d.mat)} · ${esc(SHORT[d.sym])}${ans?` · ${esc(ans[0])}`:''}${photoURL?' · 내 사진':''}</li>
@@ -1141,9 +1149,9 @@ let onbDraft = null;
 function onbHTML(step){
   const x = `<button class="x" data-close aria-label="닫기">${ic('x','sm')}</button>`;
   if(step===1) return `<div class="sheethead"><span class="tag ok">AI 코치 소개 · 1/2</span>${x}</div>
-    <h2 class="onbhook">출력이 또 망했나요?<br>사진 한 장이면 충분해요.</h2>
+    <h2 class="onbhook">사진 한 장으로<br>망한 출력물 진단</h2>
     <p style="margin:0">나와 같은 프린터를 쓰는 사람들이 <b>실제로 고친 방법</b>부터 알려드려요.</p>
-    <div class="onbgrid">${[['spark','AI가 하는 일','출력 실패의 원인을 좁히고, 고치는 순서를 추천해요'],['camera','알려줄 것','출력물 사진(선택) + 증상 그림 + 프린터·소재'],['check','받는 결과','원인 순위와 그 이유 · 같은 기종 해결 사례 · 권장 설정'],['me','내가 할 일','추천대로 고쳐 보고 결과 알려주기. AI는 원인을 추정할 뿐 확정하지 못해요']].map(([i,t,s])=>`<div><b>${ic(i,'sm')}${t}</b><span>${s}</span></div>`).join('')}</div>
+    <div class="onbgrid">${[['spark','AI 서포트','출력 실패의 원인을 좁히고, 고치는 순서를 추천해요'],['camera','입력 사항','출력물 사진(선택) + 증상 그림 + 프린터·소재'],['check','결과','원인 순위와 그 이유 · 같은 기종 해결 사례 · 권장 설정'],['me','피드백','추천대로 고쳐 보고 결과 알려주기. AI는 원인을 추정할 뿐 확정하지 못해요']].map(([i,t,s])=>`<div><b>${ic(i,'sm')}${t}</b><span>${s}</span></div>`).join('')}</div>
     <div class="sec" style="gap:6px"><span class="note">이런 증상을 고를 수 있어요</span><div class="chips">${['spaghetti','adhesion','stringing','layershift'].map(k=>`<span class="chip">${SHORT[k]}</span>`).join('')}</div></div>
     <div class="btnrow"><button class="btn ghost" data-close>나중에 볼게요</button><button class="btn primary" data-onb="2">다음</button></div>`;
   const c = onbDraft, n = allPosts().filter(p=>p.type==='case'&&(p.printer===c.printer||p.mat===c.mat)).reduce((a,p)=>a+solvedCount(p),0) + Object.values(FB_PRIOR).flat().reduce((a,v)=>a+v[0],0);
