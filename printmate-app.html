@@ -1150,7 +1150,7 @@ function onbHTML(step){
   const x = `<button class="x" data-close aria-label="닫기">${ic('x','sm')}</button>`;
   if(step===1) return `<div class="sheethead"><span class="tag ok">AI 코치 소개 · 1/2</span>${x}</div>
     <h2 class="onbhook">사진 한 장으로<br>망한 출력물 진단</h2>
-    <p style="margin:0">나와 같은 프린터를 쓰는 사람들이 <b>실제로 고친 방법</b>부터 알려드려요.</p>
+    <p style="margin:0">이 서비스에 대해 간략히 알려드릴게요.</p>
     <div class="onbgrid">${[['spark','AI 서포트','출력 실패의 원인을 좁히고, 고치는 순서를 추천해요'],['camera','입력 사항','출력물 사진(선택) + 증상 그림 + 프린터·소재'],['check','결과','원인 순위와 그 이유 · 같은 기종 해결 사례 · 권장 설정'],['me','피드백','추천대로 고쳐 보고 결과 알려주기. AI는 원인을 추정할 뿐 확정하지 못해요']].map(([i,t,s])=>`<div><b>${ic(i,'sm')}${t}</b><span>${s}</span></div>`).join('')}</div>
     <div class="sec" style="gap:6px"><span class="note">이런 증상을 고를 수 있어요</span><div class="chips">${['spaghetti','adhesion','stringing','layershift'].map(k=>`<span class="chip">${SHORT[k]}</span>`).join('')}</div></div>
     <div class="btnrow"><button class="btn ghost" data-close>나중에 볼게요</button><button class="btn primary" data-onb="2">다음</button></div>`;
