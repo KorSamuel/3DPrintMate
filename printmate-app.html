@@ -611,39 +611,53 @@ const SYM = {
     {t:'출력 도중 출력물이 바닥에서 떨어짐',w:3,fix:'첫 층 접착부터 점검하세요. 베드를 IPA로 닦고 브림 5mm를 추가하세요.'},
     {t:'들뜬 모서리에 노즐이 부딪힘',w:2,mat:{ABS:2,ASA:2,PETG:1},fix:'들뜸 대책(챔버 예열, 팬 낮추기)을 먼저 적용하고 Z-hop을 켜세요.'},
     {t:'받침 없는 오버행·서포트 부족',w:2,fix:'슬라이서 미리보기에서 공중에 뜬 구간을 확인하고 서포트를 추가하세요.'},
-    {t:'노즐에 붙은 덩어리가 출력물을 끌고 감',w:1,fix:'노즐을 청소하고, 실리콘 노즐 덮개(삭스)를 씌우세요.'}]},
+    {t:'노즐에 붙은 덩어리가 출력물을 끌고 감',w:1,fix:'노즐을 청소하고, 실리콘 노즐 덮개(삭스)를 씌우세요.'},
+    {t:'베드 온도 부족으로 접착력 약화',w:2,mat:{PETG:1,ABS:1,ASA:1},fix:'소재 권장 베드 온도로 올리고, 출력 중 베드가 식지 않게 문을 닫으세요.'},
+    {t:'모델이 가늘고 높아 넘어짐',w:1,fix:'모델을 눕혀 배치하거나, 브림·마우스 이어로 바닥 면적을 늘리세요.'}]},
   underext:{label:'윗면·벽에 틈이 생겨요',hint:'선 사이가 벌어지고 얇게 비쳐요',img:IMG.underext,causes:[
     {t:'노즐 부분 막힘',w:2,fix:'콜드 풀(cold pull)로 노즐 내부를 청소하세요.'},
     {t:'출력 속도 대비 온도 부족',w:2,mat:{PETG:1},fix:'속도를 낮추거나 노즐 온도를 10℃ 올리세요.'},
     {t:'유량(Flow) 보정이 안 됨',w:2,fix:'슬라이서의 유량 보정 출력을 실행해 값을 맞추세요.'},
     {t:'윗면 레이어 수 부족',w:1,fix:'윗면(Top) 레이어를 5겹 이상으로 늘리세요.'},
-    {t:'필라멘트 엉킴·습기',w:1,mat:{PETG:1,TPU:1},fix:'스풀이 자유롭게 도는지 확인하고 건조하세요.'}]},
+    {t:'필라멘트 엉킴·습기',w:1,mat:{PETG:1,TPU:1},fix:'스풀이 자유롭게 도는지 확인하고 건조하세요.'},
+    {t:'노즐 마모·노즐 지름 설정 불일치',w:1,fix:'슬라이서의 노즐 지름이 실제 노즐과 같은지 확인하고, 오래 쓴 황동 노즐은 교체하세요.'},
+    {t:'익스트루더 기어 장력·마모',w:1,fix:'익스트루더 기어에 낀 가루를 털고, 장력 조절 나사를 확인하세요.'}]},
   clog:{label:'중간에 압출이 멈춰요',hint:'노즐에서 아무것도 안 나오거나 딸깍 소리가 나요',img:IMG.extruder,causes:[
     {t:'열 적체(heat creep)',w:1,mat:{PLA:3},fix:'밀폐형 프린터라면 상단 덮개나 문을 열고 출력하세요.'},
     {t:'유연 소재 속도 과다',w:0,mat:{TPU:4},fix:'TPU는 25mm/s 이하로, 리트랙션은 끄거나 최소로 설정하세요.'},
     {t:'노즐 온도가 낮음',w:2,fix:'소재 권장 범위 상단으로 온도를 올리세요.'},
     {t:'필라멘트 경로 이물질·꺾임',w:2,fix:'PTFE 튜브와 익스트루더 기어의 찌꺼기를 청소하세요.'},
-    {t:'툴헤드 커넥터 접촉 불량',w:1,fix:'전원을 끄고 툴헤드 보드의 히터·서미스터·팬 커넥터가 끝까지 꽂혔는지 확인하세요.'}]},
+    {t:'툴헤드 커넥터 접촉 불량',w:1,fix:'전원을 끄고 툴헤드 보드의 히터·서미스터·팬 커넥터가 끝까지 꽂혔는지 확인하세요.'},
+    {t:'필라멘트 습기·지름 불균일',w:1,mat:{PETG:1,TPU:1},fix:'필라멘트를 건조하고, 다른 스풀로 바꿔 같은 증상이 나는지 확인하세요.'},
+    {t:'리트랙션 과다로 녹은 필라멘트가 역류',w:1,mat:{PLA:1},fix:'리트랙션 길이를 줄이고(직결식 0.8mm 이하), 리트랙션 횟수 제한을 켜세요.'}]},
   adhesion:{label:'첫 층이 바닥에 안 붙어요',hint:'시작하자마자 떨어지거나 노즐에 딸려와요',shape:'lift',causes:[
     {t:'첫 층 노즐 높이가 높음',w:3,fix:'자동 레벨링을 다시 실행하고 Z 오프셋을 0.02mm씩 낮춰 테스트하세요.'},
     {t:'베드 표면의 기름·먼지',w:3,fix:'IPA(이소프로필 알코올)로 베드를 닦고 출력면을 손으로 만지지 마세요.'},
     {t:'베드 온도가 소재보다 낮음',w:2,mat:{PETG:1,ABS:1,ASA:1},fix:'소재 권장 베드 온도로 올리세요.'},
-    {t:'첫 층 속도가 너무 빠름',w:1,fix:'첫 층 속도를 30mm/s 이하로 낮추세요.'}]},
+    {t:'첫 층 속도가 너무 빠름',w:1,fix:'첫 층 속도를 30mm/s 이하로 낮추세요.'},
+    {t:'베드 수평이 맞지 않음',w:2,fix:'자동 레벨링을 다시 하고, 수동 레벨링 기종은 네 모서리를 종이 한 장 간격으로 맞추세요.'},
+    {t:'베드 시트 마모·소재와 안 맞는 시트',w:1,mat:{PETG:1},fix:'표면이 매끈해진 시트는 교체하고, PETG는 텍스처 PEI나 이형제를 쓰세요.'}]},
   warping:{label:'모서리가 들떠요',hint:'바닥은 붙었는데 가장자리가 휘어 올라와요',shape:'warp',causes:[
     {t:'외부 바람·온도차 (인클로저 없음)',w:2,mat:{ABS:3,ASA:3},fix:'문을 닫고 챔버를 예열한 뒤 출력하세요. 에어컨 바람을 피하세요.'},
     {t:'냉각 팬이 너무 강함',w:1,mat:{ABS:2,ASA:2,PETG:1},fix:'팬 속도를 소재 권장값으로 낮추세요.'},
     {t:'접지 면적 부족',w:2,fix:'브림 5–8mm를 추가하거나 모서리에 마우스 이어를 붙이세요.'},
-    {t:'베드 온도 부족',w:2,fix:'베드 온도를 5℃씩 올려 보세요.'}]},
+    {t:'베드 온도 부족',w:2,fix:'베드 온도를 5℃씩 올려 보세요.'},
+    {t:'베드 표면 접착력 부족',w:1,fix:'IPA로 베드를 닦고, 필요하면 딱풀·이형제를 얇게 바르세요.'},
+    {t:'모서리가 날카롭고 길이가 긴 모델',w:1,fix:'모서리를 둥글게 바꾸거나 모델을 나눠서 출력하세요.'}]},
   stringing:{label:'실처럼 거미줄이 생겨요',hint:'출력물 사이에 머리카락 같은 실이 남아요',shape:'towers',causes:[
     {t:'필라멘트가 습기를 먹음',w:2,mat:{PETG:3,TPU:3},fix:'소재 권장 온도로 건조하세요. 출력 중 딱딱 튀는 소리가 나면 거의 확실해요.'},
     {t:'노즐 온도가 높음',w:2,fix:'노즐 온도를 5℃씩 내려 보세요.'},
     {t:'리트랙션 길이·속도 부족',w:2,mat:{TPU:-2},fix:'리트랙션을 0.2mm씩 늘려 테스트하세요. TPU는 예외로 줄여야 해요.'},
-    {t:'이동 속도가 느림',w:1,fix:'이동 속도를 올리고 "벽 넘지 않기(Avoid crossing walls)"를 켜세요.'}]},
+    {t:'이동 속도가 느림',w:1,fix:'이동 속도를 올리고 "벽 넘지 않기(Avoid crossing walls)"를 켜세요.'},
+    {t:'노즐 끝 잔여물',w:1,fix:'예열한 상태에서 황동 브러시로 노즐 끝을 닦으세요.'},
+    {t:'와이프·코스팅 설정 꺼짐',w:1,fix:'슬라이서에서 와이프(wipe)와 코스팅(coasting)을 켜 보세요.'}]},
   layershift:{label:'층이 옆으로 밀려요',hint:'중간부터 계단처럼 어긋나요',shape:'shift',causes:[
     {t:'벨트 장력 부족',w:3,fix:'X·Y 벨트 장력을 점검하고 제조사 가이드대로 조이세요.'},
     {t:'속도·가속도가 너무 높음',w:2,fix:'가속도를 20% 낮춰서 다시 출력해 보세요.'},
     {t:'노즐이 출력물에 걸림',w:2,mat:{ABS:1,ASA:1},fix:'들뜸을 먼저 잡고, Z-hop(이동 시 노즐 들기)을 켜세요.'},
-    {t:'레일 주변 장애물',w:1,fix:'케이블과 이물질이 축 이동을 막지 않는지 확인하세요.'}]},
+    {t:'레일 주변 장애물',w:1,fix:'케이블과 이물질이 축 이동을 막지 않는지 확인하세요.'},
+    {t:'풀리 고정 나사 풀림',w:1,fix:'모터 풀리의 고정 나사(그럽 스크루)가 조여 있는지 확인하세요.'},
+    {t:'모터·드라이버 과열',w:1,fix:'장시간 고속 출력이라면 속도를 낮추고, 메인보드 팬이 도는지 확인하세요.'}]},
 };
 const THUMB_COLORS = ['#3FAE63','#E8833A','#4A86E8','#D9534F','#8E6CCF','#E4B33B','#3BB5B0','#5B6770'];
 
@@ -923,13 +937,13 @@ function openPostForm(pre){
 /* ---------- troubleshoot + AI coach ---------- */
 // Simulated feedback from other users: [tries, success rate] per cause, same order as SYM[sym].causes
 const FB_PRIOR = {
-  spaghetti:[[48,.71],[22,.55],[30,.60],[12,.42]],
-  underext:[[35,.52],[28,.61],[41,.74],[19,.68],[16,.50]],
-  clog:[[26,.66],[14,.79],[20,.45],[24,.58],[9,.44]],
-  adhesion:[[52,.63],[61,.77],[25,.48],[18,.40]],
-  warping:[[33,.70],[21,.52],[44,.73],[17,.41]],
-  stringing:[[57,.76],[39,.58],[34,.55],[15,.38]],
-  layershift:[[29,.72],[23,.61],[12,.50],[8,.35]]
+  spaghetti:[[48,.71],[22,.55],[30,.60],[12,.42],[20,.60],[10,.55]],
+  underext:[[35,.52],[28,.61],[41,.74],[19,.68],[16,.50],[12,.50],[14,.57]],
+  clog:[[26,.66],[14,.79],[20,.45],[24,.58],[9,.44],[15,.47],[11,.55]],
+  adhesion:[[52,.63],[61,.77],[25,.48],[18,.40],[30,.70],[16,.56]],
+  warping:[[33,.70],[21,.52],[44,.73],[17,.41],[22,.62],[9,.45]],
+  stringing:[[57,.76],[39,.58],[34,.55],[15,.38],[18,.60],[13,.50]],
+  layershift:[[29,.72],[23,.61],[12,.50],[8,.35],[10,.60],[7,.43]]
 };
 const FB_SCORE = {solved:1, better:0.5, same:0, worse:0};
 const RATINGS = [['solved','해결됐어요'],['better','나아졌어요'],['same','그대로예요'],['worse','더 나빠졌어요']];
@@ -951,9 +965,9 @@ function communityFor(sym, mat, i){
   return {cases:cs.length, people:Math.round(people), weight, primary, best};
 }
 /* explainability (week 10): signals, weights and the reasons shown on each cause */
-const SHORT = {spaghetti:'실 뭉치',underext:'윗면·벽 틈',clog:'압출 멈춤',adhesion:'첫 층 안 붙음',warping:'모서리 들뜸',stringing:'거미줄',layershift:'층 밀림'};
+const SHORT = {spaghetti:'스파게티',underext:'윗면·벽 틈',clog:'압출 멈춤',adhesion:'첫 레이어 안착실패',warping:'모서리 들뜸',stringing:'거미줄',layershift:'층 밀림'};
 // per cause: s = slicer/setting change, h = hands-on check; number = minutes
-const CAUSE_META = {spaghetti:'s5 s5 s10 h10', underext:'h20 s5 s15 s2 h10', clog:'h1 s5 s2 h20 h15', adhesion:'s5 h3 s2 s2', warping:'h5 s2 s5 s2', stringing:'h360 s5 s10 s5', layershift:'h15 s2 s5 h5'};
+const CAUSE_META = {spaghetti:'s5 s5 s10 h10 s2 s5', underext:'h20 s5 s15 s2 h10 h15 h10', clog:'h1 s5 s2 h20 h15 h10 s5', adhesion:'s5 h3 s2 s2 h10 h5', warping:'h5 s2 s5 s2 h5 s15', stringing:'h360 s5 s10 s5 h3 s3', layershift:'h15 s2 s5 h5 h10 s5'};
 // one narrowing question per symptom; each answer boosts some causes (index: +weight)
 const ASK = {
   spaghetti:['언제 떨어졌나요?',[['처음 몇 층에서',{0:2}],['높이 올라간 뒤',{1:1,2:2,3:1}]]],
@@ -995,10 +1009,10 @@ function reasonHTML(c, top, rank, d){
   // strongest signal for this cause; on ties prefer the more specific evidence (feedback > community > AI > guideline)
   const W = PHASES[myFbCount()?'fb':'init'], keys = SIG.map(x=>x[0]), pref = ['fb','comm','ai','guide'];
   const best = keys.filter(k=>W[k]>0 && (k==='guide'||c.sig[k]>0)).sort((a,b)=>(c.sig[b]-c.sig[a])||(pref.indexOf(a)-pref.indexOf(b)))[0];
-  if(rank===0) return `<p class="reason"><b>1순위인 이유</b> · ${esc(WHY[best](c,d))}</p>`;
-  if(c.tieWith) return `<p class="reason not"><b>${rank+1}순위인 이유</b> · ${esc(WHY[best](c,d))}. 바로 위 원인과 근거 점수가 같지만, 다른 사용자 피드백 성공률이 위 원인 ${Math.round(c.tieWith.fb.rate*100)}%, 이 원인 ${Math.round(c.fb.rate*100)}%라서 한 칸 아래에 뒀어요</p>`;
+  if(rank===0) return `<p class="reason"><b>정확도 1위인 이유</b> · ${esc(WHY[best](c,d))}</p>`;
+  if(c.tieWith) return `<p class="reason not"><b>정확도 ${rank+1}위인 이유</b> · ${esc(WHY[best](c,d))}. 정확도 바로 위 원인과 근거 점수가 같지만, 다른 사용자 피드백 성공률이 그 원인 ${Math.round(c.tieWith.fb.rate*100)}%, 이 원인 ${Math.round(c.fb.rate*100)}%라서 한 칸 아래에 뒀어요</p>`;
   const gap = keys.slice().sort((a,b)=>(top.pts[b]-c.pts[b])-(top.pts[a]-c.pts[a]))[0];
-  return `<p class="reason not"><b>${rank+1}순위인 이유</b> · ${esc(WHY[best](c,d))}. ${top.score-c.score>0?`1순위보다 낮은 건 ${WHYNOT[gap]}`:'1순위와 근거가 비슷해요'}</p>`;
+  return `<p class="reason not"><b>정확도 ${rank+1}위인 이유</b> · ${esc(WHY[best](c,d))}. ${top.score-c.score>0?`정확도 1위보다 낮은 건 ${WHYNOT[gap]}`:'정확도 1위와 근거가 비슷해요'}</p>`;
 }
 function evidenceHTML(c, d, W){
   const g = guideOf(d.printer), ans = askAnswer(d), b = c.comm.best;
@@ -1082,7 +1096,10 @@ function upgradeHTML(d){
 function drawDiag(){
   const d = st.diag, all = diagnose(), m = MAT[d.mat], W = all.W, skip = d.skip||{};
   const ranked = all.filter(c=>!skip[c.i]), excluded = all.filter(c=>skip[c.i]);
-  const causes = d.sort==='fast' ? ranked.slice().sort((a,b)=>a.meta.min-b.meta.min||b.score-a.score) : ranked;
+  // default order: likely AND easy first, so the list reads as "try 1, if not then 2, ..."
+  const ease = c => Math.min(20, 5*Math.log2(1+c.meta.min/5)), prio = c => c.score - ease(c);
+  const causes = d.sort==='fast' ? ranked.slice().sort((a,b)=>a.meta.min-b.meta.min||b.score-a.score)
+    : d.sort==='acc' ? ranked : ranked.slice().sort((a,b)=>prio(b)-prio(a)||b.score-a.score);
   const top = ranked[0], applied = all.filter(c=>d.done[c.i]);
   const sims = allPosts().filter(p=>p.sym===d.sym && (p.type==='case')).sort((a,b)=>(b.mat===d.mat)-(a.mat===d.mat)||(b.printer===d.printer)-(a.printer===d.printer)||solvedCount(b)-solvedCount(a));
   const lvl = c => c.ai>=4?['AI 가능성 높음','bad']:c.ai>=2?['AI 가능성 중간','warn']:['AI 함께 확인','info'];
@@ -1092,6 +1109,7 @@ function drawDiag(){
     <div class="card sec">
       <div class="sechead"><h2>진단 결과</h2><span class="conf" title="${esc(conf.ok.concat(conf.why).join(' · '))}">확신도 ${conf.label}<i>${[1,2,3].map(n=>`<b class="${n<=conf.lvl?'on':''}"></b>`).join('')}</i></span></div>
       <div class="compare"><figure>${photoURL?`<img class="tph" src="${photoURL}" alt="내 사진" style="aspect-ratio:1">`:`<span class="nophoto">${ic('camera')}<span>사진 없음</span></span>`}<figcaption>내 출력물</figcaption></figure><figure>${symImg(d.sym,200)}<figcaption>증상 예시</figcaption></figure></div>
+      <p class="small" style="margin:0">입력하신 <b>기종 ${esc(d.printer)}</b> · <b>소재 ${esc(d.mat)}</b> · <b>증상 ${esc(SHORT[d.sym])}</b> · <b>사진 ${photoURL?'있음':'없음'}</b>을 바탕으로 진단했어요.</p>
       <div class="condbar"><span class="note">반영한 조건</span>
         <button class="tag" data-cond aria-label="프린터 바꾸기">${esc(d.printer)}${ic('edit','sm')}</button><button class="tag" data-cond aria-label="소재 바꾸기">${esc(d.mat)}${ic('edit','sm')}</button><button class="tag warn" data-cond aria-label="증상 바꾸기">${esc(SHORT[d.sym])}${ic('edit','sm')}</button>
         ${ans?`<button class="tag info" data-cond>${esc(ans[0])}${ic('edit','sm')}</button>`:''}
@@ -1103,13 +1121,16 @@ function drawDiag(){
       <p class="small muted" style="margin:0">${all.phase==='init'?'아직 내 피드백이 없어서 <b>제조사 가이드라인</b>을 가장 크게 반영했어요.':`내 피드백 ${myFb}건이 쌓여서 <b>사용자 피드백</b>을 가장 크게 반영했어요.`}</p>
       <div class="srcs">${SIG.filter(([k])=>W[k]>0).map(([k,l,col])=>`<span><i style="background:${col}"></i>${l} ${Math.round(W[k]*100)}%</span>`).join('')}</div>
       ${ask && d.when==null?`<div class="ask"><b>한 가지만 더 알려주세요 · ${esc(ask[0])}</b><div class="chips">${ask[1].map((o,j)=>`<button class="chip" data-when="${j}">${esc(o[0])}</button>`).join('')}<button class="chip" data-when="?">잘 모르겠어요</button></div><span class="note">답하면 원인 순위를 다시 계산해요</span></div>`:''}
-      ${ranked.length?`<div class="seg" role="group" aria-label="정렬"><button data-dsort="rec" aria-pressed="${d.sort!=='fast'}">추천 순</button><button data-dsort="fast" aria-pressed="${d.sort==='fast'}">빠른 해결 먼저</button></div>`:''}
+      ${ranked.length?`<div class="seg" role="group" aria-label="정렬"><button data-dsort="rec" aria-pressed="${d.sort!=='fast'&&d.sort!=='acc'}">추천 순</button><button data-dsort="acc" aria-pressed="${d.sort==='acc'}">정확도 순</button><button data-dsort="fast" aria-pressed="${d.sort==='fast'}">빠른 해결 순</button></div>
+      <p class="note" style="margin:0">${d.sort==='acc'?'가능성이 높은 원인부터 보여드려요.':d.sort==='fast'?'빨리 확인할 수 있는 원인부터 보여드려요.':`원인 ${ranked.length}가지를 <b>정확도가 높고 해결하기 쉬운 순서</b>로 정리했어요. 1번으로 안 되면 2번, 그래도 안 되면 3번… 하나씩 지워 가면 돼요.`}</p>`:''}
       <ol class="steps">${causes.map((c,k)=>{ const L=lvl(c), b=c.comm.best, set = b&&b.settings&&b.settings.length ? b.settings.slice(0,3).map(x=>x.join(' ')).join(' · ') : '', rank = ranked.indexOf(c);
         return `<li class="cstep ${d.done[c.i]?'done':''}">
         <span class="cnum mono">${k+1}</span>
         <div class="cbody">
+          ${d.sort==='acc'||d.sort==='fast'?'':`<span class="note" style="font-weight:700">${k===0?'먼저 해보세요':`${k}번으로 안 되면`}</span>`}
           <div class="t"><span>${esc(c.t)}</span><span class="score mono" title="추천도 (100점 만점)">${c.score}</span></div>
           ${reasonHTML(c, top, rank, d)}
+          ${d.sort!=='acc'&&d.sort!=='fast'&&rank>k?`<p class="note" style="margin:0">정확도는 ${rank+1}위지만 ${effortLabel(c.meta)}으로 확인이 쉬워서 먼저 해보시길 권해요.</p>`:''}
           <p>${esc(c.fix)}</p>
           ${set?`<button class="cref" data-open="${b.id}">${ic('community','sm')}<span>커뮤니티 설정 예 · ${esc(set)}</span></button>`:''}
           <div class="evid"><span class="tag ${c.meta.kind==='set'?'ok':''}">${effortLabel(c.meta)}</span><span class="tag ${L[1]}">${L[0]}</span><span class="tag info">커뮤니티 ${c.comm.people}명 해결</span><span class="tag warn">피드백 성공률 ${Math.round(c.fb.rate*100)}% · ${c.fb.n}명</span>${c.fb.mine?`<span class="tag ok">내 피드백 ${c.fb.mine}회 반영</span>`:''}</div>
