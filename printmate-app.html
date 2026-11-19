@@ -466,6 +466,26 @@ details.why[open] summary{margin-bottom:6px}
 .onbget .chips{margin-top:4px;gap:6px}
 .titlebar p .mini-btn{font-size:inherit;padding:0;text-decoration:underline}
 
+/* ---------- today's hot posts (community) ---------- */
+.hot{gap:10px}
+.hot .sechead h2{display:flex;align-items:center;gap:6px}
+.hotmeta{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.hot > .note,.hot > .sechead .note{color:var(--carbon)}
+.hotgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+@media (min-width:640px){.hotgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hotcard{background:#fff;border-radius:var(--r-md);box-shadow:var(--bevel);border-top:3px solid var(--amber);padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.hotsrc{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;font-weight:700;color:var(--chrome)}
+.hotsrc span:first-child{font-family:var(--pixel),var(--sans);letter-spacing:.3px}
+.hotsrc .mono{color:var(--faint);font-weight:500}
+.hotcard h3{margin:0;font-size:15.5px;line-height:1.4}
+.hotcard p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink)}
+.hotcard .hotwhy{font-size:12.5px;color:var(--muted);background:var(--sunk);border-left:3px solid var(--amber);padding:5px 8px}
+.hotcard .hotwhy b{color:var(--accent-text)}
+.hotfoot{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:auto;padding-top:4px}
+.hotfoot .btn{height:36px;padding:0 12px;font-size:13px;text-decoration:none}
+.hotbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.hotbar:empty{display:none}
+
 /* ---------- Nintendo 2001 skin ---------- */
 /* page = periwinkle chrome; content sits on white/platinum plates with a hard indigo bevel, no soft shadows */
 body,.frame{background:var(--canvas)}
@@ -815,6 +835,47 @@ function viewHome(v){
 }
 
 /* ---------- community ---------- */
+/* today's hot posts: an AI pass collects popular posts from outside communities each morning, summarizes them, and an operator approves before
+   they show (L3). Demo data: titles/summaries are illustrative and links go to each community's main or search page, not to specific posts. */
+const HOT = [
+  {id:'h1',src:'Reddit · r/BambuLab',url:'https://www.reddit.com/r/BambuLab/',title:'A1 mini 첫 층 들뜸, 텍스처 PEI 판 세척법 비교',sum:'주방세제 세척과 IPA 닦기를 사진으로 비교한 글. 세제로 씻은 쪽이 덜 들떴다는 댓글이 많아요.',up:2100,cm:340,printer:'A1 mini',mat:'PLA',sym:'adhesion',uses:['home','edu']},
+  {id:'h2',src:'Reddit · r/3Dprinting',url:'https://www.reddit.com/r/3Dprinting/',title:'PETG 거미줄, 건조기 없이 오븐으로 말려도 될까?',sum:'오븐 건조 온도·시간 경험담 모음. 스풀이 녹은 실패담도 있어서 온도 확인이 필요해요.',up:1400,cm:212,mat:'PETG',sym:'stringing',uses:['part','proto']},
+  {id:'h3',src:'Printables',url:'https://www.printables.com/',title:'서포트 없이 뽑는 관절 피규어 모음',sum:'오버행을 45° 이하로 설계한 프린트 인 플레이스 피규어들이 이번 주 인기 1위예요.',up:3800,cm:120,sym:'spaghetti',uses:['figure']},
+  {id:'h4',src:'YouTube',url:'https://www.youtube.com/results?search_query=bambu+lab+p1s+maintenance',title:'P1S 6개월 사용 후 꼭 해야 할 정비 5가지',sum:'벨트 장력, 카본 로드 청소, 노즐 교체 주기를 15분 영상으로 정리했어요.',up:900,cm:85,printer:'P1S',sym:'layershift',uses:['part','biz']},
+  {id:'h5',src:'Reddit · r/BambuLab',url:'https://www.reddit.com/r/BambuLab/',title:'출력 대행 처음 시작할 때 견적 매기는 법',sum:'재료비 + 시간당 장비비 + 후가공 시간으로 나누는 계산법과 실제 단가표를 공유한 글이에요.',up:1200,cm:260,printer:'X1C',uses:['biz']},
+  {id:'h6',src:'Reddit · r/3Dprinting',url:'https://www.reddit.com/r/3Dprinting/',title:'ABS 모서리 들뜸, 챔버 온도계로 원인 찾기',sum:'챔버 온도가 40℃ 아래일 때 들뜸이 몰렸다는 측정 기록이에요.',up:760,cm:98,mat:'ABS',sym:'warping',uses:['proto','part']},
+  {id:'h7',src:'Printables',url:'https://www.printables.com/',title:'수업용 10분 출력 교구 모음',sum:'첫 층 테스트 겸 쓸 수 있는 작은 교구들이라 수업 준비용으로 많이 저장되고 있어요.',up:640,cm:40,sym:'adhesion',uses:['edu']},
+  {id:'h8',src:'Reddit · r/3Dprinting',url:'https://www.reddit.com/r/3Dprinting/',title:'TPU 막힘 없이 뽑는 리트랙션 설정 공유',sum:'리트랙션을 끄고 25mm/s 이하로 낮추니 막힘이 사라졌다는 설정값 정리예요.',up:530,cm:77,mat:'TPU',sym:'clog',uses:['home','part']}];
+let hotAll = false;
+function hotRanked(){
+  const pr = st.printers.find(p=>p.id===st.activePrinter) || st.printers[0], prof = st.profile || {};
+  const me = {printer:prof.printer || (pr&&pr.model), mat:prof.mat || st.diag.mat, uses:prof.uses || []}, hide = st.hotHide || {};
+  return HOT.filter(h=>!hide[h.id]).map(h=>{ const why = [];
+    if(h.printer && h.printer===me.printer) why.push(`내 프린터(${h.printer})와 같아요`);
+    if(h.mat && h.mat===me.mat) why.push(`내 소재(${h.mat}) 이야기예요`);
+    const u = USES.filter(x=>(h.uses||[]).includes(x[0]) && me.uses.includes(x[0])).map(x=>x[1]);
+    if(u.length) why.push(`${u.join(' · ')} 출력에 도움돼요`);
+    return {...h, why, score: h.up/100 + (why.length?40:0) + why.length*15}; }).sort((a,b)=>b.score-a.score);
+}
+function drawHot(){
+  const el = $('#hot'); if(!el) return;
+  // two cards on phones so the community feed stays close, four on wider screens
+  const first = matchMedia('(min-width:640px)').matches ? 4 : 2;
+  const list = hotRanked(), shown = hotAll ? list : list.slice(0,first), hidden = HOT.length - list.length;
+  const today = new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric'});
+  el.innerHTML = `<div class="sechead"><h2>${ic('spark','sm')} 오늘의 핫한 글</h2><span class="note">${today} 아침 · 외부 커뮤니티</span></div>
+    <p class="note hotmeta">AI가 Reddit · Printables · YouTube의 인기 글을 모아 요약하고, 운영자가 확인한 뒤 올려요. 내 출력 환경과 맞는 글을 먼저 보여드려요. <span class="tag">시연용 예시</span></p>
+    <div class="hotgrid">${shown.map(h=>`<article class="hotcard">
+      <div class="hotsrc"><span>${esc(h.src)}</span><span class="mono">▲ ${h.up.toLocaleString('ko-KR')} · 댓글 ${h.cm}</span></div>
+      <h3>${esc(h.title)}</h3>
+      <p>${esc(h.sum)}</p>
+      <p class="hotwhy">${h.why.length?`<b>추천 이유</b> · ${esc(h.why.join(' · '))}`:'<b>추천 이유</b> · 커뮤니티 전체에서 반응이 커요'}</p>
+      <div class="hotfoot"><a class="btn ghost" href="${h.url}" target="_blank" rel="noopener">커뮤니티에서 보기 ↗</a>
+        ${h.sym?`<button class="mini-btn" data-quick="${h.sym}">내 출력물도 ${esc(SHORT[h.sym])}? 진단 ›</button>`:''}
+        <button class="mini-btn" data-hothide="${h.id}" aria-label="${esc(h.title)} 관심 없음">관심 없음</button></div>
+    </article>`).join('')}</div>
+    <div class="hotbar">${list.length>first?`<button class="chip" id="hotMore">${hotAll?'접기':`${list.length-first}개 더 보기`}</button>`:''}${hidden?`<button class="mini-btn" id="hotUndo">숨긴 글 ${hidden}개 다시 보기</button>`:''}</div>`;
+}
 const FEEDS = [['rec','맞춤 추천'],['case','해결 사례'],['model','모델'],['collab','협업·외주'],['saved','저장됨']];
 const KIND = {case:['해결 사례','case'],model:['모델',''],collab:['협업',''],question:['질문','q']};
 function viewCommunity(v){
@@ -830,10 +891,11 @@ function viewCommunity(v){
     <div class="tabs" role="tablist">${FEEDS.map(([k,l])=>`<button role="tab" data-feed="${k}" aria-selected="${st.feed===k}">${l}</button>`).join('')}</div>
   </div>
   <div class="pad" style="display:flex;flex-direction:column;gap:12px">
+    ${st.feed==='rec'&&!st.q.trim()?`<section class="sec hot" id="hot" aria-label="오늘의 핫한 글"></section>`:''}
     ${st.feed==='rec'?`<div class="banner">${ic('spark','sm')}<span><b>${esc(pr?pr.model:'내 프린터')}</b> 사용자가 해결한 사례를 먼저 보여드려요</span></div>`:''}
     <div id="feed"></div>
   </div>`;
-  drawFeed();
+  drawHot(); drawFeed();
 }
 function feedItems(){
   const pr = st.printers.find(p=>p.id===st.activePrinter);
@@ -1577,6 +1639,9 @@ document.addEventListener('click', e=>{
   if(t.id==='photoClear'){ if(photoURL) URL.revokeObjectURL(photoURL); photoURL=null; viewFix($('#view')); return; }
   if(ds.close!==undefined){ closeSheet(); return; }
   if(ds.feed){ st.feed=ds.feed; save(); viewCommunity($('#view')); return; }
+  if(ds.hothide){ st.hotHide=st.hotHide||{}; st.hotHide[ds.hothide]=true; save(); drawHot(); toast('이 글을 숨겼어요'); return; }
+  if(t.id==='hotUndo'){ st.hotHide={}; save(); drawHot(); toast('숨긴 글을 다시 보여드려요'); return; }
+  if(t.id==='hotMore'){ hotAll=!hotAll; drawHot(); return; }
   if(ds.act==='bell'){ toast('새 답변 3개: 내 질문에 답이 달렸어요'); return; }
   if(ds.save){ st.saved[ds.save]=!st.saved[ds.save]; save(); t.setAttribute('aria-pressed',!!st.saved[ds.save]); t.textContent=st.saved[ds.save]?'저장됨':'저장'; toast(st.saved[ds.save]?'저장했어요':'저장을 취소했어요'); refreshBehind(); return; }
   if(ds.solve){ st.solved[ds.solve]=!st.solved[ds.solve]; save(); t.setAttribute('aria-pressed',!!st.solved[ds.solve]); t.textContent=st.solved[ds.solve]?'해결 확인함':'나도 해결됐어요';
