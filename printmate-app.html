@@ -466,6 +466,18 @@ details.why[open] summary{margin-bottom:6px}
 .onbget .chips{margin-top:4px;gap:6px}
 .titlebar p .mini-btn{font-size:inherit;padding:0;text-decoration:underline}
 
+/* ---------- troubleshoot history ---------- */
+.fixtabs{margin-top:4px}
+.histsum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:520px}
+.histsum .stat{background:#fff;box-shadow:var(--bevel);border-radius:var(--r-md)}
+.histdemo{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:var(--carbon)!important}
+.histgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
+@media (min-width:900px){.histgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.histcard .compare{max-width:360px}
+.histfix{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.histfix li span{display:block;font-size:13px;color:var(--muted);line-height:1.5}
+.histmemo{margin:0;font-size:13.5px;background:var(--sunk);border-left:3px solid var(--chrome);padding:6px 10px}
+
 /* ---------- today's hot posts (community) ---------- */
 .hot{gap:10px}
 .hot .sechead h2{display:flex;align-items:center;gap:6px}
@@ -1110,10 +1122,12 @@ function symImg(k, H){
     : thumb({title:s.label, shape:s.shape, color:'#3FAE63', bg:'#E4F2E6'}, H, uid());
 }
 function viewFix(v){
-  const d = st.diag;
+  const d = st.diag, hist = st.fixView==='history';
   v.className='view';
-  v.innerHTML = `
-  <div class="titlebar"><h1>문제 해결</h1><p>부품 이름을 몰라도 괜찮아요. 사진과 증상을 고르면 AI 코치가 원인 후보와 점검 순서를 추천해요. <button class="mini-btn" id="onbOpen">AI 코치 소개 ›</button></p></div>
+  const head = `<div class="titlebar"><h1>문제 해결</h1><p>부품 이름을 몰라도 괜찮아요. 사진과 증상을 고르면 AI 코치가 원인 후보와 점검 순서를 추천해요. <button class="mini-btn" id="onbOpen">AI 코치 소개 ›</button></p></div>
+  <div class="pad"><div class="tabs fixtabs" role="tablist"><button role="tab" data-fixview="diag" aria-selected="${!hist}">진단하기</button><button role="tab" data-fixview="history" aria-selected="${hist}">히스토리 <span class="mono">${st.coachLog.length}</span></button></div></div>`;
+  if(hist){ v.innerHTML = head + `<div class="pad" id="histOut"></div>`; drawHistory(); return; }
+  v.innerHTML = head + `
   <div class="pad split fixsplit">
     <div class="main">
     ${photoURL?`<div class="upl has"><img src="${photoURL}" alt="내가 올린 출력물 사진"><div class="uplbar"><span>${ic('check','sm')}내 사진을 올렸어요</span><span style="display:flex;gap:6px"><label class="chip" for="photoIn" style="cursor:pointer">다른 사진</label><button class="chip" id="photoClear">삭제</button></span></div></div>`
@@ -1136,6 +1150,45 @@ function viewFix(v){
   </div>`;
   if(d.ran && d.sym) drawDiag();
 }
+/* history: every '수정 결과 알려주기' becomes a record the user can reopen, re-diagnose from, or share */
+function thumbOf(url){ return new Promise(res=>{ if(!url) return res(''); const im = new Image();
+  im.onload = ()=>{ const s = 240/Math.max(im.width,im.height,1), c = document.createElement('canvas'); c.width = Math.round(im.width*s); c.height = Math.round(im.height*s);
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height); try{ res(c.toDataURL('image/jpeg',.6)); }catch(e){ res(''); } };
+  im.onerror = ()=>res(''); im.src = url; }); }
+// shown only while the user has no records of their own, so the tab isn't empty in a demo
+function demoHistory(){ const day = 864e5, now = Date.now(), mk = (sym,i) => ({i, t:SYM[sym].causes[i].t, fix:SYM[sym].causes[i].fix}), top = sym => SYM[sym].causes.slice(0,3).map((c,k)=>({t:c.t,score:[92,61,40][k]}));
+  return [{demo:true,id:'demo1',ts:now-3*day,sym:'stringing',printer:'A1 mini',mat:'PETG',rating:'better',fixes:[mk('stringing',0)],memo:'건조하니 실은 줄었는데 아직 조금 남아요',top:top('stringing')},
+    {demo:true,id:'demo2',ts:now-12*day,sym:'adhesion',printer:'A1 mini',mat:'PLA',rating:'solved',fixes:[mk('adhesion',0),mk('adhesion',1)],memo:'Z 오프셋을 조금 낮추니 바로 붙었어요',top:top('adhesion')}]; }
+const RATE_TAG = {solved:'ok',better:'info',same:'warn',worse:'bad'};
+const histDate = e => e.ts ? new Date(e.ts).toLocaleString('ko-KR',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : (e.date||'');
+function histRecords(){ return st.coachLog.length ? st.coachLog : demoHistory(); }
+function drawHistory(){
+  const el = $('#histOut'); if(!el) return;
+  const all = histRecords(), demo = !st.coachLog.length, f = st.histFilter||'all';
+  const list = all.filter(e=>f==='all' || (f==='solved'&&e.rating==='solved') || (f==='better'&&e.rating==='better') || (f==='open'&&(e.rating==='same'||e.rating==='worse')));
+  const solved = all.filter(e=>e.rating==='solved').length;
+  el.innerHTML = `<div class="sec" style="gap:12px">
+    <div class="histsum">
+      <div class="stat"><b>${all.length}</b><span>전체 기록</span></div><div class="stat"><b>${solved}</b><span>해결됨</span></div>
+      <div class="stat"><b>${all.length?Math.round(solved/all.length*100):0}%</b><span>해결률</span></div>
+    </div>
+    ${demo?`<p class="note histdemo" style="margin:0"><span class="tag">예시 기록</span> 아직 내 기록이 없어 예시를 보여드려요. 진단 후 「수정 결과 알려주기」를 보내면 여기에 쌓여요.</p>`:''}
+    <div class="chips" aria-label="결과로 거르기">${[['all','전체'],['solved','해결됨'],['better','나아짐'],['open','그대로·악화']].map(([k,l])=>`<button class="chip" data-hfilter="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div>
+    ${list.length?`<div class="histgrid">${list.map(e=>{ const fixes = e.fixes || (e.applied||[]).map(t=>({t,fix:''})), rate = (RATINGS.find(r=>r[0]===e.rating)||['',''])[1];
+      return `<article class="card sec histcard">
+        <div class="sechead"><h2>${esc(SYM[e.sym]?SYM[e.sym].label:e.sym)}</h2><span class="tag ${RATE_TAG[e.rating]||''}">${esc(rate)}</span></div>
+        <p class="note" style="margin:0">${esc(histDate(e))} · ${esc(e.printer)} · ${esc(e.mat)}${e.whenLabel?` · ${esc(e.whenLabel)}`:''}${e.ver?` · 코치 ${esc(e.ver)}`:''}</p>
+        ${e.before||e.after?`<div class="compare">${[['before','수정 전'],['after','수정 후']].map(([k,l])=>`<figure>${e[k]?`<img class="tph" src="${e[k]}" alt="${l} 사진" style="aspect-ratio:1">`:`<span class="nophoto">${ic('camera')}<span>사진 없음</span></span>`}<figcaption>${l}</figcaption></figure>`).join('')}</div>`:''}
+        <div class="step"><b>${fixes.length}</b>적용한 해결법</div>
+        <ol class="histfix">${fixes.map(x=>`<li><b>${esc(x.t)}</b>${x.fix?`<span>${esc(x.fix)}</span>`:''}</li>`).join('')}</ol>
+        ${e.memo?`<p class="histmemo">“${esc(e.memo)}”</p>`:''}
+        ${e.top&&e.top.length?`<details class="why"><summary>당시 원인 순위 보기</summary><ol class="srclist">${e.top.map(c=>`<li>${esc(c.t)} <span class="mono">${c.score}점</span></li>`).join('')}</ol></details>`:''}
+        <div class="btnrow"><button class="btn ghost" data-hredo="${e.id||''}">${ic('spark','sm')}같은 조건으로 다시 진단</button>${(e.rating==='solved'||e.rating==='better')&&!e.demo?`<button class="btn primary" data-hshare="${e.id}">해결 사례로 공유</button>`:''}</div>
+      </article>`; }).join('')}</div>`
+      : `<p class="note" style="margin:0">이 조건에 맞는 기록이 없어요.</p>`}
+  </div>`;
+}
+
 function feedbackHTML(d, applied){
   const can = applied.length && d.rating;
   return `<div class="card sec">
@@ -1615,7 +1668,7 @@ function viewMe(v){
       <form id="addPr" style="display:flex;gap:8px"><input class="inp" id="prName" placeholder="이름" maxlength="20" required><select class="inp" id="prModel" style="max-width:110px">${PRINTERS.map(x=>`<option>${x}</option>`).join('')}</select><button class="btn primary" style="height:44px;padding:0 14px" aria-label="프린터 추가">${ic('plus','sm')}</button></form>
     </div>
         <div class="card sec">
-      <div class="sechead"><h2>코칭 기록</h2><span class="tag ok mono">AI 코치 ${coachVersion()}</span></div>
+      <div class="sechead"><h2>코칭 기록</h2><span style="display:flex;align-items:center;gap:10px"><span class="tag ok mono">AI 코치 ${coachVersion()}</span><button class="mini-btn" data-fixview="history">히스토리 전체 보기 ›</button></span></div>
       ${st.coachLog.length?`<div>${st.coachLog.slice(0,6).map(l=>`<div class="saved"><div><b style="font-size:14px">${esc(SYM[l.sym].label)}</b><div class="note">${esc(l.printer)} · ${esc(l.mat)} · ${esc(l.date)} · 적용 ${l.applied.length}개 · ${esc(l.ver||'')}</div></div><span class="tag ${l.rating==='solved'?'ok':l.rating==='better'?'info':l.rating==='same'?'warn':'bad'}">${(RATINGS.find(r=>r[0]===l.rating)||['',''])[1]}</span></div>`).join('')}</div>`
         :`<p class="note" style="margin:0">문제해결에서 코칭을 받고 수정 결과를 알려 주면 여기에 쌓이고, 그만큼 코칭 AI가 업그레이드돼요.</p>`}
     </div>
@@ -1679,15 +1732,27 @@ document.addEventListener('click', e=>{
     const rb={}, br={}; before.forEach((c,k)=>{ rb[c.i]=k+1; br[c.i]=Math.round(c.fb.rate*100); });
     const from = coachVersion();
     applied.forEach(c=>{ const k=`${d.sym}|${d.mat}|${c.i}`, L=st.learn[k]||{t:0,s:0}; L.t++; L.s+=FB_SCORE[d.rating]; st.learn[k]=L; });
-    st.coachLog.unshift({date:new Date().toLocaleDateString('ko-KR',{month:'short',day:'numeric'}),sym:d.sym,mat:d.mat,printer:d.printer,rating:d.rating,applied:applied.map(c=>c.t),memo:d.memo||''});
-    const to = coachVersion(); st.coachLog[0].ver = to;
+    const ans = askAnswer(d);
+    st.coachLog.unshift({id:'h'+Date.now(), ts:Date.now(), date:new Date().toLocaleDateString('ko-KR',{month:'short',day:'numeric'}),sym:d.sym,mat:d.mat,printer:d.printer,rating:d.rating,applied:applied.map(c=>c.t),memo:d.memo||'',
+      when:d.when, whenLabel:ans?ans[0]:'', fixes:applied.map(c=>({i:c.i,t:c.t,fix:c.fix})), top:before.slice(0,3).map(c=>({t:c.t,score:c.score}))});
+    const to = coachVersion(), entry = st.coachLog[0]; entry.ver = to;
+    // keep small before/after thumbnails with the record (object URLs don't survive a reload)
+    Promise.all([thumbOf(photoURL), thumbOf(afterURL)]).then(([b,a])=>{ if(b||a){ entry.before=b; entry.after=a; save(); } });
     const after = diagnose(), ra={}; after.forEach((c,k)=>ra[c.i]=k+1);
     d.update = {from,to,changes:applied.map(c=>{ const a=after.find(x=>x.i===c.i); return {t:c.t,before:br[c.i],after:Math.round(a.fb.rate*100),rb:rb[c.i],ra:ra[c.i]}; })};
     d.fbDone = true; save(); drawDiag(); toast(`코칭 AI를 ${to}로 업그레이드했어요`); return; }
   if(t.id==='coachNext'){ const d=st.diag; d.done={}; d.fbDone=false; d.rating=null; d.memo=''; d.update=null; if(afterURL){ URL.revokeObjectURL(afterURL); afterURL=null; } save(); drawDiag(); toast('피드백을 반영한 새 코칭 순서예요'); return; }
   if(t.id==='diagNew'){ resetFb(); st.diag.ran=false; st.diag.sym=null; if(photoURL){ URL.revokeObjectURL(photoURL); photoURL=null; } save(); viewFix($('#view')); $('#scroll').scrollTop=0; return; }
+  if(ds.fixview){ st.fixView=ds.fixview; save(); if(st.tab!=='fix') go('fix'); else viewFix($('#view')); return; }
+  if(ds.hfilter){ st.histFilter=ds.hfilter; save(); drawHistory(); return; }
+  if(ds.hredo!==undefined){ const e=histRecords().find(x=>(x.id||'')===ds.hredo); if(!e) return; const d=st.diag;
+    Object.assign(d,{sym:e.sym,printer:e.printer,mat:e.mat,when:e.when!=null?e.when:null,ran:true}); resetFb(); st.fixView='diag'; save(); viewFix($('#view'));
+    const o=$('#diagOut'); if(o) o.scrollIntoView({block:'start'}); toast('기록과 같은 조건으로 다시 진단했어요'); return; }
+  if(ds.hshare){ const e=st.coachLog.find(x=>x.id===ds.hshare); if(!e) return; const fx=e.fixes||[];
+    openPostForm({type:'case',printer:e.printer,mat:e.mat,sym:e.sym,title:`${e.mat} ${SHORT[e.sym]} 문제 해결`,
+      solution:[fx.map(x=>x.fix).join(' '),e.memo].filter(Boolean).join(' '), fixes:fx.map(x=>x.i).filter(x=>x!=null)}); return; }
   if(ds.share){ const d=st.diag; openPostForm({type:ds.share,printer:d.printer,mat:d.mat,sym:d.sym,
-    title: ds.share==='case'?`${d.mat} ${SYM[d.sym].label.replace(/요$/,'던 문제')} 해결`:`${d.printer}에서 ${d.mat} ${SYM[d.sym].label.replace(/어요$|아요$|요$/,'')}는 문제`,
+    title: ds.share==='case'?`${d.mat} ${SHORT[d.sym]} 문제 해결`:`${d.printer}에서 ${d.mat} ${SYM[d.sym].label.replace(/어요$|아요$|요$/,'')}는 문제`,
     solution: ds.share==='case'?diagnose().filter(c=>d.done[c.i]).map(c=>c.fix).join(' '):'', fixes: diagnose().filter(c=>d.done[c.i]).map(c=>c.i)}); return; }
   if(ds.cmat){ st.cost.mat=ds.cmat; st.cost.kg=MAT[ds.cmat].price; save(); viewCost($('#view')); return; }
   if(t.id==='qSave'){ const name=$('#qName').value.trim()||`${st.cost.mat} 출력 견적`; const r=calc();
