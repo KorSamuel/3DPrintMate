@@ -450,12 +450,20 @@ details.why[open] summary{margin-bottom:6px}
 .dashq .dashfix{text-align:left}
 .onbhook{font-family:var(--display);font-weight:900;font-size:28px;line-height:1.25;margin:0;color:#fff;letter-spacing:0;
   -webkit-text-stroke:1.2px var(--carbon);paint-order:stroke fill;text-shadow:2px 2px 0 var(--carbon)}
-.onbgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.onbgrid > div{background:#fff;border-radius:var(--r-md);box-shadow:var(--bevel);padding:12px;display:flex;flex-direction:column;gap:4px}
-.onbgrid b{font-size:14px;display:flex;align-items:center;gap:6px;color:var(--chrome)}
-.onbgrid span{font-size:13px;line-height:1.45}
-.onbcount{display:flex;align-items:center;gap:8px;background:var(--halftone),var(--carbon);color:#fff;border-top:3px solid var(--amber);padding:12px 14px;border-radius:var(--r-md);font-size:14px}
-.onbcount b{color:var(--amber)}
+.sheethead h2.onbhook{font-size:30px;line-height:1.2;word-break:keep-all}
+@media (max-width:899px){.sheethead h2.onbhook{font-size:24px}}
+.onbwrap{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media (min-width:900px){.onbwrap{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:stretch}}
+.onbin{gap:16px}
+.onbout{gap:12px;background:var(--halftone),var(--carbon);color:#fff;border-top:3px solid var(--amber);border-radius:var(--r-md);padding:18px}
+.onbout > h2{color:var(--amber);font-size:16px}
+.onbout .note{color:var(--sky)}
+.onbget{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.onbget li{display:grid;grid-template-columns:32px minmax(0,1fr);gap:10px;align-items:start}
+.onbget .gi{width:32px;height:32px;display:grid;place-items:center;background:var(--accent);border-radius:var(--r-sm);box-shadow:0 2px 0 rgba(0,0,0,.4)}
+.onbget li > span:last-child{display:flex;flex-direction:column;gap:3px;font-size:13.5px;line-height:1.45}
+.onbget b{font-size:15px;color:#fff}
+.onbget .chips{margin-top:4px;gap:6px}
 .titlebar p .mini-btn{font-size:inherit;padding:0;text-decoration:underline}
 
 /* ---------- Nintendo 2001 skin ---------- */
@@ -796,7 +804,7 @@ function viewHome(v){
         <span style="flex:1;min-width:0;text-align:left"><b style="display:block;font-size:16px">출력이 이상한가요?</b><span class="note">AI 코치 ${coachVersion()} · 같은 기종 사용자가 실제로 고친 방법부터 추천</span></span>
         ${ic('chev')}
       </button>
-      <div class="chips" aria-label="자주 생기는 증상으로 바로 진단">${['spaghetti','adhesion','stringing'].map(k=>`<button class="chip" data-quick="${k}">${SHORT[k]}</button>`).join('')}<button class="chip" data-tab="fix">다른 증상 ›</button></div>
+      <div class="chips" aria-label="자주 생기는 증상으로 바로 진단">${watchSyms(st.profile&&st.profile.uses).map(k=>`<button class="chip" data-quick="${k}">${SHORT[k]}</button>`).join('')}<button class="chip" data-tab="fix">다른 증상 ›</button></div>
     </div>
     <div class="grid2">
       <button class="card tile" data-tab="cost"><small>원가계산</small><b class="mono">${won(r.unit)}</b><span class="note">${esc(st.cost.mat)} · ${esc(st.cost.g)}g 개당 견적 · 저장 ${st.quotes.length}건</span></button>
@@ -1165,26 +1173,42 @@ function condHTML(){ const c = condDraft, ask = ASK[c.sym];
   <button class="btn primary block" id="condApply">${ic('spark','sm')}이 조건으로 다시 진단</button>`; }
 function openCond(){ const d = st.diag; condDraft = {printer:d.printer, mat:d.mat, sym:d.sym, when:d.when}; openSheet(condHTML()); }
 
-/* onboarding (week 10 · 01): what the AI coach does, what to give it, what comes back, and what stays with the user */
+/* onboarding (week 10 · 01): first the user's setup (printer, material, what they print), then what the AI coach does with it */
+// what people print → symptoms worth watching first (used for the intro and the dashboard quick chips)
+const USES = [['figure','피규어·미니어처',['spaghetti','stringing']],['part','기능 부품·브래킷',['layershift','warping']],['proto','시제품·케이스',['warping','adhesion']],
+  ['home','생활용품·소품',['adhesion','stringing']],['edu','교육·과제',['adhesion','spaghetti']],['biz','출력 대행·판매',['underext','layershift']]];
+function watchSyms(uses){ const out=[]; USES.filter(u=>(uses||[]).includes(u[0])).forEach(u=>u[2].forEach(k=>{ if(!out.includes(k)) out.push(k); }));
+  return out.length ? out.slice(0,3) : ['spaghetti','adhesion','stringing']; }
 let onbDraft = null;
-function onbHTML(step){
-  const x = `<button class="x" data-close aria-label="닫기">${ic('x','sm')}</button>`;
-  if(step===1) return `<div class="sheethead"><span class="tag ok">AI 코치 소개 · 1/2</span>${x}</div>
-    <h2 class="onbhook">사진 한 장으로<br>망한 출력물 진단</h2>
-    <p style="margin:0">이 서비스에 대해 간략히 알려드릴게요.</p>
-    <div class="onbgrid">${[['spark','AI 서포트','출력 실패의 원인을 좁히고, 고치는 순서를 추천해요'],['camera','입력 사항','출력물 사진(선택) + 증상 그림 + 프린터·소재'],['check','결과','원인 순위와 그 이유 · 같은 기종 해결 사례 · 권장 설정'],['me','피드백','추천대로 고쳐 보고 결과 알려주기. AI는 원인을 추정할 뿐 확정하지 못해요']].map(([i,t,s])=>`<div><b>${ic(i,'sm')}${t}</b><span>${s}</span></div>`).join('')}</div>
-    <div class="sec" style="gap:6px"><span class="note">이런 증상을 고를 수 있어요</span><div class="chips">${['spaghetti','adhesion','stringing','layershift'].map(k=>`<span class="chip">${SHORT[k]}</span>`).join('')}</div></div>
-    <div class="btnrow"><button class="btn ghost" data-close>나중에 볼게요</button><button class="btn primary" data-onb="2">다음</button></div>`;
-  const c = onbDraft, n = allPosts().filter(p=>p.type==='case'&&(p.printer===c.printer||p.mat===c.mat)).reduce((a,p)=>a+solvedCount(p),0) + Object.values(FB_PRIOR).flat().reduce((a,v)=>a+v[0],0);
-  return `<div class="sheethead"><span class="tag ok">AI 코치 소개 · 2/2</span>${x}</div>
-    <h2 style="margin:0">내 프린터와 소재를 알려주세요</h2>
-    <p class="note" style="margin:0">한 번만 고르면 다음부터 매번 설명하지 않아도 돼요.</p>
-    <div class="sec"><h2>프린터</h2><div class="chips">${PRINTERS.map(p=>`<button class="chip" data-opr="${p}" aria-pressed="${c.printer===p}">${p}</button>`).join('')}</div></div>
-    <div class="sec"><h2>소재</h2><div class="chips">${Object.keys(MAT).map(p=>`<button class="chip" data-omt="${p}" aria-pressed="${c.mat===p}">${p}</button>`).join('')}</div></div>
-    <div class="onbcount">${ic('community','sm')} <span><b>${esc(c.printer)} · ${esc(c.mat)}</b> 사용자의 해결 기록 <b class="mono">${n.toLocaleString('ko-KR')}건</b>을 기준으로 코칭해요</span></div>
-    <div class="btnrow"><button class="btn ghost" data-onb="1">이전</button><button class="btn primary" id="onbDone">증상 고르러 가기</button></div>`;
+// one wide page: inputs on the left, and on the right only what the user gets from those inputs (updates live)
+function onbHTML(){
+  const c = onbDraft, m = MAT[c.mat], useNames = USES.filter(u=>c.uses.includes(u[0])).map(u=>u[1]);
+  const cases = allPosts().filter(p=>p.type==='case'&&p.printer===c.printer), solved = cases.reduce((a,p)=>a+solvedCount(p),0);
+  const get = [
+    ['spark','원인 순위와 그 이유',`${c.printer} · ${c.mat} 기준으로 원인 후보를 순서대로, 왜 그 순서인지와 함께`],
+    ['community','같은 기종 해결 사례', cases.length ? `${c.printer} 사용자가 실제로 고친 사례 ${cases.length}건 · ${solved.toLocaleString('ko-KR')}명 해결` : `아직 ${c.printer} 사례가 적어서, 비슷한 기종 사례로 먼저 보여드려요`],
+    ['prep',`${c.mat} 권장 설정`,`노즐 ${m.nozzle}℃ · 베드 ${m.bed}℃ · 냉각 팬 ${m.fan} · 건조 ${m.dry}`],
+    ['fix','먼저 챙길 문제', c.uses.length ? `${useNames.join(' · ')} 출력에서 자주 생기는 문제` : '왼쪽에서 주로 출력하는 것을 고르면 맞춰 드려요', c.uses.length ? watchSyms(c.uses) : []]];
+  if(c.uses.includes('biz')) get.push(['cost','견적서 · 세금계산서','원가를 계산하면 견적서를 자동으로 만들고, 세금계산서로 바로 바꿔요']);
+  return `<div class="sheethead"><h2 class="onbhook">사진 한 장으로 망한 출력물 진단</h2><button class="x" data-close aria-label="닫기">${ic('x','sm')}</button></div>
+  <div class="onbwrap">
+    <div class="sec onbin">
+      <div><h2 style="margin:0;font-size:20px">내 출력 환경을 알려주세요</h2><p class="note" style="margin:4px 0 0">한 번만 입력하면 진단과 추천에 계속 반영돼요. 나중에 바꿀 수도 있어요.</p></div>
+      <div class="sec"><h2>프린터</h2><div class="chips">${PRINTERS.map(p=>`<button class="chip" data-opr="${p}" aria-pressed="${c.printer===p}">${p}</button>`).join('')}</div></div>
+      <div class="sec"><h2>주로 쓰는 소재</h2><div class="chips">${Object.keys(MAT).map(p=>`<button class="chip" data-omt="${p}" aria-pressed="${c.mat===p}">${p}</button>`).join('')}</div></div>
+      <div class="sec"><h2>주로 출력하는 것 <span class="note" style="font-weight:500">여러 개 고를 수 있어요</span></h2><div class="chips">${USES.map(([k,l])=>`<button class="chip" data-ouse="${k}" aria-pressed="${c.uses.includes(k)}">${l}</button>`).join('')}</div></div>
+    </div>
+    <div class="sec onbout" aria-live="polite">
+      <h2 style="margin:0">이 정보로 받을 수 있는 것</h2>
+      <ul class="onbget">${get.map(([i,t,s,syms])=>`<li><span class="gi">${ic(i,'sm')}</span><span><b>${t}</b><span>${esc(s)}</span>${syms&&syms.length?`<span class="chips">${syms.map(k=>`<span class="tag warn">${SHORT[k]}</span>`).join('')}</span>`:''}</span></li>`).join('')}</ul>
+      <p class="note" style="margin:0">AI는 원인을 추정할 뿐 확정하지는 못해요.</p>
+    </div>
+  </div>
+  <div class="btnrow"><button class="btn ghost" data-close>나중에 할게요</button><button class="btn primary" id="onbDone" ${c.uses.length?'':'disabled'}>${c.uses.length?'시작하기':'주로 출력하는 것을 1개 이상 골라 주세요'}</button></div>`;
 }
-function openOnboard(step){ st.onboarded = true; save(); onbDraft = onbDraft || {printer:st.diag.printer, mat:st.diag.mat}; openSheet(onbHTML(step||1)); }
+function openOnboard(){ st.onboarded = true; save(); const p = st.profile||{};
+  onbDraft = {printer:p.printer||st.diag.printer, mat:p.mat||st.diag.mat, uses:(p.uses||[]).slice()};
+  openSheet(onbHTML(), w=>w.querySelector('.sheet').classList.add('wide')); }
 
 /* ---------- cost ---------- */
 const COST_FIELDS = [
@@ -1575,11 +1599,12 @@ document.addEventListener('click', e=>{
   if(t.id==='condApply'){ const d=st.diag, c=condDraft, changed = c.sym!==d.sym||c.printer!==d.printer||c.mat!==d.mat;
     Object.assign(d,{sym:c.sym,printer:c.printer,mat:c.mat,when:c.when,ran:true}); if(changed) resetFb(); save(); closeSheet(); viewFix($('#view'));
     const o=$('#diagOut'); if(o) o.scrollIntoView({block:'start'}); toast('조건을 바꿔 다시 진단했어요'); return; }
-  if(t.id==='onbOpen'){ openOnboard(1); return; }
-  if(ds.onb){ swapSheet(onbHTML(+ds.onb)); return; }
-  if(ds.opr){ onbDraft.printer=ds.opr; swapSheet(onbHTML(2)); return; }
-  if(ds.omt){ onbDraft.mat=ds.omt; swapSheet(onbHTML(2)); return; }
-  if(t.id==='onbDone'){ const d=st.diag; if(d.printer!==onbDraft.printer||d.mat!==onbDraft.mat){ d.printer=onbDraft.printer; d.mat=onbDraft.mat; d.ran=false; resetFb(); }
+  if(t.id==='onbOpen'){ openOnboard(); return; }
+  if(ds.opr){ onbDraft.printer=ds.opr; swapSheet(onbHTML()); return; }
+  if(ds.omt){ onbDraft.mat=ds.omt; swapSheet(onbHTML()); return; }
+  if(ds.ouse){ const u=onbDraft.uses, i=u.indexOf(ds.ouse); if(i<0) u.push(ds.ouse); else u.splice(i,1); swapSheet(onbHTML()); return; }
+  if(t.id==='onbDone'){ const d=st.diag, c=onbDraft; st.profile={printer:c.printer, mat:c.mat, uses:c.uses.slice()};
+    if(d.printer!==c.printer||d.mat!==c.mat){ d.printer=c.printer; d.mat=c.mat; d.ran=false; resetFb(); }
     save(); closeSheet(); go('fix'); toast(`${d.printer} · ${d.mat} 기준으로 코칭할게요`); return; }
   if(t.id==='runDiag'){ st.diag.ran=true; save(); t.innerHTML=ic('spark','sm')+'증상과 사례를 비교하는 중…'; t.disabled=true;
     setTimeout(()=>{ viewFix($('#view')); const o=$('#diagOut'); if(o) o.scrollIntoView({behavior:'smooth',block:'start'}); }, 600); return; }
@@ -1663,6 +1688,6 @@ let rsz; addEventListener('resize',()=>{ clearTimeout(rsz); rsz=setTimeout(()=>{
 /* ---------- boot ---------- */
 const h = location.hash.slice(1); st.tab = (TABS.some(x=>x[0]===h) || h==='me') ? h : 'home';
 renderNav(); render();
-if(!st.onboarded) openOnboard(1);
+if(!st.onboarded) openOnboard();
 })();
 </script>
