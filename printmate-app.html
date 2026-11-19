@@ -457,6 +457,12 @@ details.why[open] summary{margin-bottom:6px}
 .onbin{gap:16px}
 .onbout{gap:12px;background:var(--halftone),var(--carbon);color:#fff;border-top:3px solid var(--amber);border-radius:var(--r-md);padding:18px}
 .onbout > h2{color:var(--amber);font-size:16px}
+.onbtotal{display:flex;flex-direction:column;gap:2px;background:var(--amber);color:var(--carbon);border-radius:var(--r-md);padding:12px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 3px 0 rgba(0,0,0,.45)}
+.onbtotal > span:first-child{font-size:13.5px;font-weight:700}
+.onbtotal b{font-size:40px;line-height:1.1;color:#fff;-webkit-text-stroke:1.2px var(--carbon);paint-order:stroke fill;text-shadow:2px 2px 0 var(--carbon)}
+.onbtotal > span:last-child{font-size:12.5px;font-weight:600}
+.hotlabel{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;background:var(--red);color:#fff;font-weight:800;font-size:12.5px;padding:3px 9px;border-radius:var(--r-sm);letter-spacing:.3px}
+.hotwhy-d{margin-top:-2px;color:var(--chrome)!important;font-weight:600}
 .onbout .note{color:var(--sky)}
 .onbget{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
 .onbget li{display:grid;grid-template-columns:32px minmax(0,1fr);gap:10px;align-items:start}
@@ -808,8 +814,9 @@ function toast(msg){ const old=$('.toast'); if(old) old.remove(); const t=docume
 /* ---------- dashboard ---------- */
 function viewHome(v){
   const pr = st.printers.find(p=>p.id===st.activePrinter) || st.printers[0];
-  const cases = allPosts().filter(p=>p.type==='case').sort((a,b)=>((b.printer===pr.model)*1000+likeCount(b))-((a.printer===pr.model)*1000+likeCount(a)));
-  const feat = cases[0], rest = allPosts().filter(p=>p!==feat).sort((a,b)=>likeCount(b)-likeCount(a)).slice(0,6);
+  // the featured post is today's hottest: the most-recommended post in the community
+  const byLikes = allPosts().slice().sort((a,b)=>likeCount(b)-likeCount(a));
+  const feat = byLikes[0], rest = byLikes.slice(1,7);
   const r = calc(), list = checklist(st.prepMat), ck = st.checks[st.prepMat]||{}, doneN = list.filter(x=>ck[x[0]]).length;
   v.className='view';
   v.innerHTML = `
@@ -825,7 +832,8 @@ function viewHome(v){
     <div class="main"><section class="sec" aria-label="커뮤니티">
       <div class="sechead"><h2>커뮤니티</h2><button class="more" data-tab="community">전체 보기 ${ic('chev','sm')}</button></div>
       ${feat?`<button class="feature" data-open="${feat.id}">${thumb(feat,150,uid())}
-        <span class="fcap"><span class="tag ok" style="align-self:flex-start">${ic('check','sm')}${esc(pr.model)} 사용자 해결 사례</span><b>${esc(feat.title)}</b><span class="note">${esc(feat.printer)} · ${esc(feat.mat)} · <span style="color:var(--accent-text);font-weight:600">${solvedCount(feat)}명 해결</span> · 좋아요 <span class="mono">${likeCount(feat)}</span></span></span></button>`:''}
+        <span class="fcap"><span class="hotlabel">${ic('spark','sm')}오늘의 HOT</span><span class="note hotwhy-d">오늘 커뮤니티에서 추천을 가장 많이 받은 글이에요</span>
+          ${feat.printer===pr.model&&feat.type==='case'?`<span class="tag ok" style="align-self:flex-start">${ic('check','sm')}${esc(pr.model)} 사용자 해결 사례</span>`:''}<b>${esc(feat.title)}</b><span class="note">${esc(feat.printer)} · ${esc(feat.mat)}${feat.type==='case'?` · <span style="color:var(--accent-text);font-weight:600">${solvedCount(feat)}명 해결</span>`:''} · 추천 <span class="mono">${likeCount(feat)}</span></span></span></button>`:''}
       <div class="hscroll">${rest.map(p=>`<button class="mini" data-open="${p.id}" style="background:var(--surface)">${thumb(p,120,uid())}<div>${esc(p.title)}<small>${KIND[p.type][0]} · ${esc(p.author)}</small></div></button>`).join('')}</div>
       <div class="chips"><button class="chip" data-gofeed="case">해결 사례</button><button class="chip" data-gofeed="model">모델</button><button class="chip" data-gofeed="collab">협업·외주</button><button class="chip" data-share-new>${ic('plus','sm')} 사례 공유</button></div>
     </section></div>
@@ -1305,6 +1313,11 @@ function onbHTML(){
     ['prep',`${c.mat} 권장 설정`,`노즐 ${m.nozzle}℃ · 베드 ${m.bed}℃ · 냉각 팬 ${m.fan} · 건조 ${m.dry}`],
     ['fix','먼저 챙길 문제', c.uses.length ? `${useNames.join(' · ')} 출력에서 자주 생기는 문제` : '왼쪽에서 주로 출력하는 것을 고르면 맞춰 드려요', c.uses.length ? watchSyms(c.uses) : []]];
   if(c.uses.includes('biz')) get.push(['cost','견적서 · 세금계산서','원가를 계산하면 견적서를 자동으로 만들고, 세금계산서로 바로 바꿔요']);
+  // "content prepared for your machine": solved records + related community posts + matching hot posts (shown with its breakdown)
+  const rel = p => p.printer===c.printer || p.mat===c.mat;
+  const cnt = {records: allPosts().filter(p=>p.type==='case'&&rel(p)).reduce((a,p)=>a+solvedCount(p),0) + Object.values(FB_PRIOR).flat().reduce((a,v)=>a+v[0],0),
+    posts: allPosts().filter(rel).length, hot: HOT.filter(h=>rel(h)||(h.uses||[]).some(u=>c.uses.includes(u))).length};
+  cnt.total = cnt.records + cnt.posts + cnt.hot;
   return `<div class="sheethead"><h2 class="onbhook">사진 한 장으로 망한 출력물 진단</h2><button class="x" data-close aria-label="닫기">${ic('x','sm')}</button></div>
   <div class="onbwrap">
     <div class="sec onbin">
@@ -1314,6 +1327,8 @@ function onbHTML(){
       <div class="sec"><h2>주로 출력하는 것 <span class="note" style="font-weight:500">여러 개 고를 수 있어요</span></h2><div class="chips">${USES.map(([k,l])=>`<button class="chip" data-ouse="${k}" aria-pressed="${c.uses.includes(k)}">${l}</button>`).join('')}</div></div>
     </div>
     <div class="sec onbout" aria-live="polite">
+      <div class="onbtotal"><span>${esc(c.printer)} · ${esc(c.mat)} 사용자를 위해 준비된 콘텐츠</span><b class="mono">${cnt.total.toLocaleString('ko-KR')}개</b>
+        <span>해결 기록 ${cnt.records.toLocaleString('ko-KR')}건 · 관련 게시물 ${cnt.posts}개 · 오늘의 핫한 글 ${cnt.hot}개</span></div>
       <h2 style="margin:0">이 정보로 받을 수 있는 것</h2>
       <ul class="onbget">${get.map(([i,t,s,syms])=>`<li><span class="gi">${ic(i,'sm')}</span><span><b>${t}</b><span>${esc(s)}</span>${syms&&syms.length?`<span class="chips">${syms.map(k=>`<span class="tag warn">${SHORT[k]}</span>`).join('')}</span>`:''}</span></li>`).join('')}</ul>
       <p class="note" style="margin:0">AI는 원인을 추정할 뿐 확정하지는 못해요.</p>
